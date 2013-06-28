@@ -5,6 +5,7 @@ from random import randint, choice
 import pygame 
 from pygame.sprite import Sprite
 from pygame import *
+from pygame.locals import *
 from vec2d import vec2d
 
 
@@ -201,12 +202,12 @@ class Car(Sprite):
 SCREEN_WIDTH, SCREEN_HEIGHT = 800, 600
 screen = pygame.display.set_mode(
                 (SCREEN_WIDTH, SCREEN_HEIGHT), 0, 32)
+pygame.init()
+font = pygame.font.Font(None,8)
 clock = pygame.time.Clock()
 
 def intro_screen():
     #Level selection etc
-    clock.tick(5)
-    pygame.init()
     background = pygame.image.load('intro_bg.png')
     screen.blit(background,background.get_rect());
     level1 = Button(screen, 'Level01', (100,100))
@@ -214,7 +215,8 @@ def intro_screen():
     buttonExit = Button(screen, 'Exit', (100,500))
     pygame.display.flip()
 
-    while True:
+    while True:        
+        clock.tick(50)
         x,y = mouse.get_pos()
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -240,23 +242,118 @@ def intro_screen():
 
 def run_game(level):
     # Game parameters
-    SCREEN_WIDTH, SCREEN_HEIGHT = 800, 600
     CAR_FILENAMES = [
         'darkSprite00.png', 
         'redSprite00.png']
     CRASH_FILENAMES = [
         'crashSprite01.png',
         'crashSprite02.png']
-    pygame.init()
-
-
+    crash_sound = pygame.mixer.Sound('crash_sound.wav')
     #pygame.mixer.music.load('bg_music.mp3')
     #print('I loaded')
     #pygame.mixer.music.play()
-    crash_sound = pygame.mixer.Sound('crash_sound.wav')
-    if level == 1:
+
     
-        cars = []    
+    cars = []
+    infoScreen = Button(screen, 'InfoScreen', (5, 400))
+    hour_glass = hourGlass(screen, 'hourGlassDown.png',
+                               (infoScreen.pos.x + 215, infoScreen.pos.y + 20))
+    reset = Button(screen, 'Reset',
+                           (infoScreen.pos.x + 150, infoScreen.pos.y + 20))
+    ret = Button(screen, 'Return',
+                            (infoScreen.pos.x + 150, infoScreen.pos.y + 85))
+    
+
+    pause = True;  #level starts paused
+    if level == 1:
+
+        background = pygame.image.load('bg_level02.png')
+        car0 = Car(screen,'darkSprite00.png',
+                        (435,340),
+                        (1,0), 500, 0, 0)
+        cars.append(car0)
+        car1 = Car(screen,'redSprite00.png',
+                        (435,390),
+                        (1,0), 600, 0, 0)
+        cars.append(car1)
+        target = Car(screen,'crashSpritet01.png',
+                        (435,120),
+                        (1,0), 500, 0, 0)
+        cars.append(target)     
+        car0.direction.rotate(-90)
+        car1.direction.rotate(-90)
+
+        i = 0
+        carClicked = False
+        crashPlayed = False
+        # The main game loop
+        #
+        while True:
+            # Limit frame speed to 50 FPS
+            #
+            time_passed = clock.tick(50)            
+            screen.blit(background, background.get_rect())
+            infoScreen.blitme()
+            hour_glass.blitme()
+            reset.blitme()
+            ret.blitme()            
+            if(hour_glass.pause):
+                time_passed = 0;
+                
+            x,y = mouse.get_pos()
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    exit_game()
+                elif(event.type == MOUSEBUTTONDOWN and within_boundaries((x,y), hour_glass, False)):
+                    hour_glass.update()
+                    hour_glass.blitme()
+                elif(event.type == MOUSEBUTTONDOWN and within_boundaries((x,y), reset, False)):
+                    #pygame.display.quit() shut down the working instance
+                    run_game(level)
+                elif(event.type == MOUSEBUTTONDOWN and within_boundaries((x,y), ret, False)):
+                    #pygame.display.quit() shut down the working instance
+                    intro_screen()
+                elif(event.type == MOUSEBUTTONDOWN or event.type == MOUSEBUTTONUP):
+                    if(event.type == MOUSEBUTTONDOWN):
+                        if(within_boundaries((x,y), car1, True)):
+                           carClicked = True
+                           clickPosx = x
+                           clickPosy = y                           
+                    else:    #event.type == MOUSEBUTTONUP
+                        if(carClicked):
+                            carClicked = False
+                            releasePosx = x
+                            releasePosy = y
+                            new_direction = vec2d(releasePosx - clickPosx, releasePosy - clickPosy).normalized()
+                            new_speed = int(vec2d(releasePosx - clickPosx, releasePosy - clickPosy).get_length() / 50) / 10 + 0.02
+                            print(new_speed)
+                            car1.speed = new_speed
+                            #print(releasePosx,clickPosx,releasePosy, clickPosy,new_speed) horrible testing line
+                elif(carClicked and hour_glass.pause):
+                    car1.pos = vec2d(car1.pos.x,y) #x axis immutable
+               
+            for car in cars:
+                car.update(time_passed)
+                car.blitme()
+                if(within_boundaries((x,y), car, True)):
+                    stats = Button(screen, 'Stats', (car.pos.x+50, car.pos.y-50))
+                    stats.blitme()
+                    #text = font.render('Mass =', 1, (10,10,10))
+                    #screen.blit(text, stats.pos)
+                    
+            if(checkCrashes(cars[0], cars[1]) and not hour_glass.pause):
+                wreck = cars[0].crash(cars[1])
+                if(not crashPlayed):
+                    crashPlayed = True
+                    crash_sound.play()
+                cars = []
+                cars.append(target)
+                cars.append(wreck)
+                cars.append(wreck)
+            pygame.display.flip()
+    
+    
+    elif level == 2:  
         car0 = Car(screen,'darkSprite00.png',
                         (SCREEN_WIDTH/2,SCREEN_HEIGHT/2),
                         (1,0), 500, 0.2, 0)
@@ -265,8 +362,6 @@ def run_game(level):
                         (SCREEN_WIDTH/2+150,SCREEN_HEIGHT/2),
                         (0,1), 500, 0.2, 0)
         cars.append(car1)
-
-        hour_glass = hourGlass(screen, 'hourGlassDown.png', (50,50))
 
         pause = True;  #level starts paused
         i = 0
@@ -323,110 +418,7 @@ def run_game(level):
                 cars.append(wreck)
             pygame.display.flip()
 
-    if level == 2:
-
-        cars = []
-        car0 = Car(screen,'darkSprite00.png',
-                        (435,340),
-                        (1,0), 500, 0, 0)
-        cars.append(car0)
-        car1 = Car(screen,'redSprite00.png',
-                        (435,390),
-                        (1,0), 600, 0, 0)
-        cars.append(car1)
-        target = Car(screen,'crashSpritet01.png',
-                        (435,120),
-                        (1,0), 500, 0, 0)
-        cars.append(target)       
-
-        car0.direction.rotate(-90)
-        car1.direction.rotate(-90)
-
-        infoScreen = Button(screen, 'InfoScreen', (5, 400))
-        hour_glass = hourGlass(screen, 'hourGlassDown.png',
-                               (infoScreen.pos.x + 215, infoScreen.pos.y + 20))
-        reset = Button(screen, 'Reset',
-                           (infoScreen.pos.x + 150, infoScreen.pos.y + 20))
-        ret = Button(screen, 'Return',
-                            (infoScreen.pos.x + 150, infoScreen.pos.y + 85))
-        stats = Button(screen, 'Stats', (car0.pos.x+50, car0.pos.y-50))
-        
-
-        pause = True;  #level starts paused
-        i = 0
-        carClicked = False
-        clickedCar = -1
-        crashPlayed = False
-        # The main game loop
-        #
-        while True:
-            # Limit frame speed to 50 FPS
-            #
-            time_passed = clock.tick(50)
-            background = pygame.image.load('bg_level02.png')
-            screen.blit(background, background.get_rect())
-            infoScreen.blitme()
-            hour_glass.blitme()
-            reset.blitme()
-            ret.blitme()
-            
-            if(hour_glass.pause):
-                time_passed = 0;
-            x,y = mouse.get_pos()
-            
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    exit_game()
-                elif(event.type == MOUSEBUTTONDOWN and x < hour_glass.pos.x + hour_glass.image_w and
-                         x > hour_glass.pos.x and y < hour_glass.pos.y + hour_glass.image_h and
-                         y > 50):
-                    hour_glass.update()
-                    hour_glass.blitme()
-                elif(event.type == MOUSEBUTTONDOWN and x < reset.pos.x + reset.image_w and
-                         x > reset.pos.x and y < reset.pos.y + reset.image_h and
-                         y > reset.pos.y):
-                    #pygame.display.quit() shut down the working instance
-                    run_game(level)
-                elif(event.type == MOUSEBUTTONDOWN and within_boundaries((x,y), ret, False)):
-                    #pygame.display.quit() shut down the working instance
-                    intro_screen()
-                elif(event.type == MOUSEBUTTONDOWN or event.type == MOUSEBUTTONUP):
-                    if(event.type == MOUSEBUTTONDOWN):
-                        if(within_boundaries((x,y), car1, True)):
-                           carClicked = True
-                           clickedCar = 1
-                           clickPosx = x
-                           clickPosy = y                           
-                    else:    
-                        if(carClicked):
-                            carClicked = False
-                            releasePosx = x
-                            releasePosy = y
-                            new_direction = vec2d(releasePosx - clickPosx, releasePosy - clickPosy).normalized()
-                            new_speed = int(vec2d(releasePosx - clickPosx, releasePosy - clickPosy).get_length() / 50) / 10 + 0.02
-                            print(new_speed)
-                            cars[clickedCar].speed = new_speed
-                            #print(releasePosx,clickPosx,releasePosy, clickPosy,new_speed) horrible testing line
-                elif(carClicked and hour_glass.pause):
-                    cars[clickedCar].pos = vec2d(cars[clickedCar].pos.x,y)
-                
-            for car in cars:
-                car.update(time_passed)
-                car.blitme()
-                if(within_boundaries((x,y), car, True)):
-                    stats.pos.x = car.pos.x + 50
-                    stats.pos.y = car.pos.y - 50
-                    stats.blitme()
-            if(checkCrashes(cars[0], cars[1]) and not hour_glass.pause):
-                wreck = cars[0].crash(cars[1])
-                if(not crashPlayed):
-                    crashPlayed = True
-                    crash_sound.play()
-                cars = []
-                cars.append(target)
-                cars.append(wreck)
-                cars.append(wreck)
-            pygame.display.flip()
+    
 
 def within_boundaries(c, obj, central_coordinates):
     if(not central_coordinates):
