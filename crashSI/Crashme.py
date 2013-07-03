@@ -249,6 +249,7 @@ def run_game(level):
         'crashSprite01.png',
         'crashSprite02.png']
     crash_sound = pygame.mixer.Sound('crash_sound.wav')
+    car_start_sound = pygame.mixer.Sound('car_start.wav')
     #pygame.mixer.music.load('bg_music.mp3')
     #print('I loaded')
     #pygame.mixer.music.play()
@@ -328,6 +329,7 @@ def run_game(level):
                             new_speed = int(vec2d(releasePosx - clickPosx, releasePosy - clickPosy).get_length() / 50) / 10 + 0.02
                             print(new_speed)
                             car1.speed = new_speed
+                            car_start_sound.play()
                             #print(releasePosx,clickPosx,releasePosy, clickPosy,new_speed) horrible testing line
                 elif(carClicked and hour_glass.pause):
                     car1.pos = vec2d(car1.pos.x,y) #x axis immutable
@@ -405,6 +407,7 @@ def run_game(level):
                                 new_direction = vec2d(releasePosx - clickPosx, releasePosy - clickPosy).normalized()
                                 new_speed = vec2d(releasePosx - clickPosx, releasePosy - clickPosy).get_length() / 1000
                                 cars[clickedCar].speed = new_speed
+                                car_start_sound.play()
                             #print(releasePosx,clickPosx,releasePosy, clickPosy,new_speed) horrible testing line
                 elif(carClicked and hour_glass.pause):
                     cars[clickedCar].pos = vec2d(x,cars[i].pos.y)  
