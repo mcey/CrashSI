@@ -147,9 +147,7 @@ class Car(Sprite):
             self.speed = 0
         displacement = vec2d(    
             self.direction.x * self.speed * time_passed,
-            self.direction.y * self.speed * time_passed)
-
-        
+            self.direction.y * self.speed * time_passed)        
         self.pos += displacement
         
         # When the image is rotated, its size is changed.
@@ -335,6 +333,9 @@ def run_game(level):
             for car in cars:
                 car.update(time_passed)
                 car.blitme()
+                if(car.speed < 0.05 and car.friction > 0): #friction > 0 implies car is a wreck
+                    if(within_boundaries(car.pos, target, False)):
+                        print('YOU WON!')
                 if(within_boundaries((x,y), car, True)):
                     stats = Button(screen, 'Stats', (car.pos.x+50, car.pos.y-50))
                     stats.blitme()
