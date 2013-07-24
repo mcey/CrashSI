@@ -139,9 +139,10 @@ class Car(Sprite):
         # of self.direction (which is normalized to not affect
         # the magnitude of the displacement)
         #
-
-        deceleration = self.mass * self.friction * 0.01
-        self.speed -= deceleration * time_passed
+        if(self.friction > 0 and self.speed > 0.0):
+            deceleration = self.mass * self.friction * 0.01
+            self.speed = self.speed - (deceleration * time_passed)
+            print(deceleration, time_passed, deceleration*time_passed, self.speed)
         if(self.speed < 0):
             self.speed = 0
         displacement = vec2d(    
@@ -275,14 +276,12 @@ def run_game(level):
         cars.append(car0)
         car1 = Car(screen,'redSprite00.png',
                         (435,390),
-                        (1,0), 600, 0, 0)
-        cars.append(car1)
-        target = Car(screen,'crashSpritet01.png',
-                        (435,120),
                         (1,0), 500, 0, 0)
-        cars.append(target)     
+        cars.append(car1)  
         car0.direction.rotate(-90)
         car1.direction.rotate(-90)
+
+        target = Button(screen, 'Target', (430, 50))
 
         i = 0
         carClicked = False
@@ -330,7 +329,6 @@ def run_game(level):
                             print(new_speed)
                             car1.speed = new_speed
                             car_start_sound.play()
-                            #print(releasePosx,clickPosx,releasePosy, clickPosy,new_speed) horrible testing line
                 elif(carClicked and hour_glass.pause):
                     car1.pos = vec2d(car1.pos.x,y) #x axis immutable
                
@@ -343,14 +341,12 @@ def run_game(level):
                     #text = font.render('Mass =', 1, (10,10,10))
                     #screen.blit(text, stats.pos)
                     
-            if(checkCrashes(cars[0], cars[1]) and not hour_glass.pause):
+            if(len(cars) > 1 and checkCrashes(cars[0], cars[1]) and not hour_glass.pause):
                 wreck = cars[0].crash(cars[1])
                 if(not crashPlayed):
                     crashPlayed = True
                     crash_sound.play()
                 cars = []
-                cars.append(target)
-                cars.append(wreck)
                 cars.append(wreck)
             pygame.display.flip()
     
