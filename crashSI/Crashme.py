@@ -53,6 +53,8 @@ class Button(Sprite):
 
     def blitme(self):
         self.screen.blit(self.image, self.position)
+        text = font.render("Hello, World", True, (0, 128, 0))
+        screen.blit(text,self.position)
         
 class Car(Sprite):
     """ A car sprite."""
@@ -214,6 +216,9 @@ def intro_screen():
     buttonExit = Button(screen, 'Exit', (100,500))
     pygame.display.flip()
 
+    pygame.mixer.music.load('bomberman.mid')
+    pygame.mixer.music.play()
+
     while True:        
         clock.tick(50)
         x,y = mouse.get_pos()
@@ -225,11 +230,13 @@ def intro_screen():
                        x > level1.pos.x and
                        y < (level1.pos.y + level1.image_h) and
                        y > level1.pos.y):
+                    pygame.mixer.music.stop()
                     run_game(1)
                 elif(x < (level2.pos.x + level2.image_w) and
                        x > level2.pos.x and
                        y < (level2.pos.y + level2.image_h) and
                        y > level2.pos.y):
+                    pygame.mixer.music.stop()
                     run_game(2)
                 elif(x < (buttonExit.pos.x + buttonExit.image_w) and
                        x > buttonExit.pos.x and
@@ -239,6 +246,27 @@ def intro_screen():
         
     
 
+def level_intro_screen():
+    background = pygame.image.load('level_intro_bg.png')
+    screen.blit(background,background.get_rect());
+    continue_button = Button(screen, 'Stats', (324,490))
+    pygame.display.flip()
+    counter = 0
+    while True:
+        clock.tick(50)
+        x,y = mouse.get_pos()
+        if(counter > 300):
+            break
+        counter += 1
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                exit_game()
+            elif(event.type == MOUSEBUTTONDOWN):
+                if(within_boundaries((x,y), continue_button, False)):
+                    counter = 351 #quit
+                   
+    
+    
 def run_game(level):
     # Game parameters
     CAR_FILENAMES = [
@@ -266,7 +294,7 @@ def run_game(level):
 
     pause = True;  #level starts paused
     if level == 1:
-
+        level_intro_screen()
         background = pygame.image.load('bg_level02.png')
         car0 = Car(screen,'darkSprite00.png',
                         (435,340),
@@ -279,7 +307,7 @@ def run_game(level):
         car0.direction.rotate(-90)
         car1.direction.rotate(-90)
 
-        target = Button(screen, 'Target', (430, 50))
+        target = Button(screen, 'Target', (410,80))
 
         i = 0
         carClicked = False
@@ -294,7 +322,8 @@ def run_game(level):
             infoScreen.blitme()
             hour_glass.blitme()
             reset.blitme()
-            ret.blitme()            
+            ret.blitme()
+            target.blitme()
             if(hour_glass.pause):
                 time_passed = 0;
                 
@@ -339,8 +368,8 @@ def run_game(level):
                 if(within_boundaries((x,y), car, True)):
                     stats = Button(screen, 'Stats', (car.pos.x+50, car.pos.y-50))
                     stats.blitme()
-                    #text = font.render('Mass =', 1, (10,10,10))
-                    #screen.blit(text, stats.pos)
+                    text = font.render("Mass =", True, (10,10,10))
+                    screen.blit(text, (320 - text.get_width() // 2, 240 - text.get_height() // 2))
                     
             if(len(cars) > 1 and checkCrashes(cars[0], cars[1]) and not hour_glass.pause):
                 wreck = cars[0].crash(cars[1])
@@ -438,6 +467,7 @@ def within_boundaries(c, obj, central_coordinates):
         
 def exit_game():   
     pygame.display.quit()
+    pygame.mixer.music.stop()
     sys.exit()
     
 def checkCrashes(car0, car1):
