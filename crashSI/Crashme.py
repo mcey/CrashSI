@@ -51,10 +51,9 @@ class Button(Sprite):
         self.image_w, self.image_h = self.image.get_size()
         self.screen.blit(self.image, self.position)
 
-    def blitme(self):
+    def blitme(self, str=''):
         self.screen.blit(self.image, self.position)
-        text = font.render("Hello, World", True, (0, 128, 0))
-        screen.blit(text,self.position)
+        
         
 class Car(Sprite):
     """ A car sprite."""
@@ -252,6 +251,7 @@ def level_intro_screen():
     continue_button = Button(screen, 'Stats', (324,490))
     pygame.display.flip()
     counter = 0
+    
     while True:
         clock.tick(50)
         x,y = mouse.get_pos()
@@ -368,8 +368,8 @@ def run_game(level):
                 if(within_boundaries((x,y), car, True)):
                     stats = Button(screen, 'Stats', (car.pos.x+50, car.pos.y-50))
                     stats.blitme()
-                    text = font.render("Mass =", True, (10,10,10))
-                    screen.blit(text, (320 - text.get_width() // 2, 240 - text.get_height() // 2))
+                    info = "Mass=" + str(car.mass) + "\n Velocity=" + str(car.speed)
+                    write_to_screen(info, screen, 15, (0,0,0), (255,255,255), stats.pos)
                     
             if(len(cars) > 1 and checkCrashes(cars[0], cars[1]) and not hour_glass.pause):
                 wreck = cars[0].crash(cars[1])
@@ -461,11 +461,18 @@ def within_boundaries(c, obj, central_coordinates):
             c[1] > (obj.pos.y - obj.image_h / 2))
     return result
 
-#def report_stats(screen, button, car):
-    
-    
-        
-def exit_game():   
+def write_to_screen(str, screen, size, color, bg, pos):
+    if(str != ''):
+        pos[0] += 10
+        pos[1] += 10
+        str = str.split("\n")
+        for s in str:
+            font = pygame.font.SysFont("buxton sketch", size)
+            text = font.render(s, True, color,bg)
+            screen.blit(text,(pos[0],pos[1]))
+            pos[1] += size + 5
+            
+def exit_game():
     pygame.display.quit()
     pygame.mixer.music.stop()
     sys.exit()
