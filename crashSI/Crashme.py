@@ -208,6 +208,9 @@ pygame.init()
 font = pygame.font.Font(None,8)
 clock = pygame.time.Clock()
 
+black = (0,0,0)
+white = (255,255,255)
+
 def intro_screen():
     #Level selection etc
     background = pygame.image.load('intro_bg.png')
@@ -306,8 +309,9 @@ def run_game(level):
         car0.direction.rotate(-90)
         car1.direction.rotate(-90)
 
-        target = Button(screen, 'Target', (410,80))
+        target = Button(screen, 'Target', (410,100))
 
+        info_screen_visible = True
         i = 0
         carClicked = False
         crashPlayed = False
@@ -318,7 +322,8 @@ def run_game(level):
             #
             time_passed = clock.tick(50)            
             screen.blit(background, background.get_rect())
-            infoScreen.blitme()
+            if(info_screen_visible):
+                infoScreen.blitme()
             hour_glass.blitme()
             reset.blitme()
             ret.blitme()
@@ -363,7 +368,15 @@ def run_game(level):
                 car.blitme()
                 if(car.speed < 0.05 and car.friction > 0): #friction > 0 implies car is a wreck
                     if(within_boundaries(car.pos, target, False)):
-                        print('YOU WON!')
+                        win_button = Button(screen, 'InfoScreen', (200,250))
+                        win_button.blitme()
+                        write_to_button("YOU WON\nHere are some stats:", screen, 20, black, white, win_button)
+                        break
+                    elif(car.speed == 0):
+                        lose_button = Button(screen, 'InfoScreen', (200,250))
+                        lose_button.blitme()
+                        write_to_button("NOPE\n", screen, 40, black, white, lose_button)  
+                        info_screen_visible = False
                 if(within_boundaries((x,y), car, True)):
                     stats = Button(screen, 'Stats', (car.pos.x+50, car.pos.y-50))
                     stats.blitme()
