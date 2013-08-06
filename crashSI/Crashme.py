@@ -143,6 +143,8 @@ class Car(Sprite):
         if(self.friction > 0 and self.speed > 0.0):
             deceleration = self.mass * self.friction * 0.01
             self.speed = self.speed - (deceleration * time_passed)
+            #if(self.speed > 0.5):     # spinning animation for the wreckage
+                #self.direction.angle += 90
             print(deceleration, time_passed, deceleration*time_passed, self.speed)
         if(self.speed < 0):
             self.speed = 0
@@ -225,46 +227,46 @@ def intro_screen():
             if event.type == pygame.QUIT:
                 exit_game()
             elif(event.type == MOUSEBUTTONDOWN):
-                if(x < (level1.pos.x + level1.image_w) and
-                       x > level1.pos.x and
-                       y < (level1.pos.y + level1.image_h) and
-                       y > level1.pos.y):
+                if(within_boundaries((x,y),level1,False)):
                     pygame.mixer.music.stop()
                     run_game(1)
-                elif(x < (level2.pos.x + level2.image_w) and
-                       x > level2.pos.x and
-                       y < (level2.pos.y + level2.image_h) and
-                       y > level2.pos.y):
+                elif(within_boundaries((x,y),level2,False)):
                     pygame.mixer.music.stop()
                     run_game(2)
-                elif(x < (buttonExit.pos.x + buttonExit.image_w) and
-                       x > buttonExit.pos.x and
-                       y < (buttonExit.pos.y + buttonExit.image_h) and
-                       y > buttonExit.pos.y):
+                elif(within_boundaries((x,y),buttonExit,False)):
                     exit_game()
         
     
 
 def level_intro_screen():
     background = pygame.image.load('level_intro_bg.png')
-    screen.blit(background,background.get_rect());
     continue_button = Button(screen, 'Stats', (324,490))
-    pygame.display.flip()
-    counter = 0
+    screen.blit(background,background.get_rect());
+    level = 1 #temporary, normally function takes level input
+    skip = False
+    dialogue = []
+    dialogue.append("Now son, don't get cocky.\nMy expert opinion here is that "
+    "we have two speeders.\nBut one guy says he was stopped at the sign all "
+    "proper.\n\nNow I say one moving car hitting a stationary car is not\nenough"
+    " for their wreckage to drift so far.\nUse your fancy science son, prove me wrong...")  
+    lines  = dialogue[level-1]
+    pos = vec2d(250,170)
     
+    write_monologue(lines, screen, 20, (255,255,255), (0,0,0), pos)
+    continue_button.blitme()
+    write_to_button("Continue", screen, 25, (0,0,0), (255,255,255), continue_button)     
     while True:
         clock.tick(50)
         x,y = mouse.get_pos()
-        if(counter > 300):
+        if(skip):
             break
-        counter += 1
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 exit_game()
             elif(event.type == MOUSEBUTTONDOWN):
                 if(within_boundaries((x,y), continue_button, False)):
-                    counter = 351 #quit
-                   
+                    skip = True
+        pygame.display.flip()           
     
     
 def run_game(level):
@@ -277,9 +279,6 @@ def run_game(level):
         'crashSprite02.png']
     crash_sound = pygame.mixer.Sound('crash_sound.wav')
     car_start_sound = pygame.mixer.Sound('car_start.wav')
-    #pygame.mixer.music.load('bg_music.mp3')
-    #print('I loaded')
-    #pygame.mixer.music.play()
 
     
     cars = []
@@ -343,9 +342,9 @@ def run_game(level):
                 elif(event.type == MOUSEBUTTONDOWN or event.type == MOUSEBUTTONUP):
                     if(event.type == MOUSEBUTTONDOWN):
                         if(within_boundaries((x,y), car1, True)):
-                           carClicked = True
-                           clickPosx = x
-                           clickPosy = y                           
+                            carClicked = True
+                            clickPosx = x
+                            clickPosy = y                           
                     else:    #event.type == MOUSEBUTTONUP
                         if(carClicked):
                             carClicked = False
@@ -368,8 +367,8 @@ def run_game(level):
                 if(within_boundaries((x,y), car, True)):
                     stats = Button(screen, 'Stats', (car.pos.x+50, car.pos.y-50))
                     stats.blitme()
-                    info = "Mass=" + str(car.mass) + "\n Velocity=" + str(car.speed)
-                    write_to_screen(info, screen, 15, (0,0,0), (255,255,255), stats.pos)
+                    info = "Mass=" + str(car.mass) + "\n Velocity=" + str(round(car.speed,2))
+                    write_to_button(info, screen, 15, (0,0,0), (255,255,255), stats)
                     
             if(len(cars) > 1 and checkCrashes(cars[0], cars[1]) and not hour_glass.pause):
                 wreck = cars[0].crash(cars[1])
@@ -381,7 +380,7 @@ def run_game(level):
             pygame.display.flip()
     
     
-    elif level == 2:  
+    elif level == 2:  #NOT YET IMPLEMENTED
         car0 = Car(screen,'darkSprite00.png',
                         (SCREEN_WIDTH/2,SCREEN_HEIGHT/2),
                         (1,0), 500, 0.2, 0)
@@ -461,16 +460,46 @@ def within_boundaries(c, obj, central_coordinates):
             c[1] > (obj.pos.y - obj.image_h / 2))
     return result
 
-def write_to_screen(str, screen, size, color, bg, pos):
+def write_to_button(str, screen, size, color, bg, button):
     if(str != ''):
-        pos[0] += 10
-        pos[1] += 10
         str = str.split("\n")
+        font = pygame.font.SysFont("buxton sketch", size)
+        pos_v = button.pos[1] 
+        offset_h = (button.image_h - font.size("C")[1] - 18 ) / 2
+        pos_v += offset_h
         for s in str:
-            font = pygame.font.SysFont("buxton sketch", size)
+            text_w = font.size(s)[0]
+            offset_w = (button.image_w - text_w) / 2
             text = font.render(s, True, color,bg)
-            screen.blit(text,(pos[0],pos[1]))
-            pos[1] += size + 5
+            screen.blit(text,(button.pos[0] + offset_w, pos_v))
+            pos_v += size + 5
+
+def write_monologue(str, screen, size, color, bg, pos):    
+    font = pygame.font.SysFont("buxton sketch", 25)
+    sequence = list(str)
+    pos_x = pos[0]
+    skip_flag = False
+    for c in sequence:
+        for event in pygame.event.get():
+            if(event.type == KEYDOWN): #skipping intro monologue
+                k = event.key
+                if(k == pygame.K_ESCAPE):
+                    skip_flag = True
+                    break
+        if(not skip_flag):        
+            pygame.time.delay(40)
+        if(c == '\n'):
+                    pos[0] = pos_x
+                    pos[1] += 35
+                    pygame.time.delay(300)
+        else:
+            text = font.render(c, True, color, bg)
+            screen.blit(text,(pos[0],pos[1])) 
+            pos[0] += font.size(c)[0] 
+        pygame.display.flip()
+        
+            
+            
             
 def exit_game():
     pygame.display.quit()
