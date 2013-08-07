@@ -207,6 +207,8 @@ screen = pygame.display.set_mode(
 pygame.init()
 font = pygame.font.Font(None,8)
 clock = pygame.time.Clock()
+played_levels = []
+won_levels = []
 
 black = (0,0,0)
 white = (255,255,255)
@@ -215,10 +217,21 @@ def intro_screen():
     #Level selection etc
     background = pygame.image.load('intro_bg.png')
     screen.blit(background,background.get_rect());
-    level1 = Button(screen, 'Level01', (100,100))
-    level2 = Button(screen, 'Level02', (100,200))
-    buttonExit = Button(screen, 'Exit', (100,500))
+    buttons = []
+    buttons.append(Button(screen, 'Gen', (600,500)))
+    buttons.append(Button(screen, 'Gen', (100,100)))
+    buttons.append(Button(screen, 'Gen', (100,200)))
+    button_score_bar = Button(screen, 'ScoreBar', (100,525))   
+    write_to_button(("EXIT"), screen, 35, black, white,buttons[0])
+    score_button = Button(screen, 'InfoScreen', (100,300))
+    write_to_button(("Current Rank: Rookie\nLevels Completed: " + str(len(won_levels))), screen, 20, black, white,score_button)
+    for i in range (1,len(buttons)):
+                if(i in won_levels):
+                    write_to_button((str(i) +  " - completed!"), screen, 15, black, white,buttons[i])
+                else:
+                    write_to_button(("Level " + str(i)), screen, 30, black, white,buttons[i])                    
     pygame.display.flip()
+    
 
     pygame.mixer.music.load('bomberman.mid')
     pygame.mixer.music.play()
@@ -226,26 +239,29 @@ def intro_screen():
     while True:        
         clock.tick(50)
         x,y = mouse.get_pos()
+        
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 exit_game()
             elif(event.type == MOUSEBUTTONDOWN):
-                if(within_boundaries((x,y),level1,False)):
+                if(within_boundaries((x,y),buttons[1],False)):
                     pygame.mixer.music.stop()
+                    if(1 not in played_levels):
+                        level_intro_screen(1)
+                        played_levels.append(1)
                     run_game(1)
-                elif(within_boundaries((x,y),level2,False)):
+                elif(within_boundaries((x,y),buttons[2],False)):
                     pygame.mixer.music.stop()
                     run_game(2)
-                elif(within_boundaries((x,y),buttonExit,False)):
+                elif(within_boundaries((x,y),buttons[0],False)):
                     exit_game()
         
     
 
-def level_intro_screen():
+def level_intro_screen(level):
     background = pygame.image.load('level_intro_bg.png')
-    continue_button = Button(screen, 'Stats', (324,490))
+    continue_button = Button(screen, 'Gen', (324,490))
     screen.blit(background,background.get_rect());
-    level = 1 #temporary, normally function takes level input
     skip = False
     dialogue = []
     dialogue.append("Now son, don't get cocky.\nMy expert opinion here is that "
@@ -293,10 +309,8 @@ def run_game(level):
     ret = Button(screen, 'Return',
                             (infoScreen.pos.x + 150, infoScreen.pos.y + 85))
     
-
     pause = True;  #level starts paused
     if level == 1:
-        level_intro_screen()
         background = pygame.image.load('bg_level02.png')
         car0 = Car(screen,'darkSprite00.png',
                         (435,340),
@@ -371,6 +385,8 @@ def run_game(level):
                         win_button = Button(screen, 'InfoScreen', (200,250))
                         win_button.blitme()
                         write_to_button("YOU WON\nHere are some stats:", screen, 20, black, white, win_button)
+                        if(level not in won_levels):
+                            won_levels.append(level)
                         break
                     elif(car.speed == 0):
                         lose_button = Button(screen, 'InfoScreen', (200,250))
@@ -378,7 +394,7 @@ def run_game(level):
                         write_to_button("NOPE\n", screen, 40, black, white, lose_button)  
                         info_screen_visible = False
                 if(within_boundaries((x,y), car, True)):
-                    stats = Button(screen, 'Stats', (car.pos.x+50, car.pos.y-50))
+                    stats = Button(screen, 'Gen', (car.pos.x+50, car.pos.y-50))
                     stats.blitme()
                     info = "Mass=" + str(car.mass) + "\n Velocity=" + str(round(car.speed,2))
                     write_to_button(info, screen, 15, (0,0,0), (255,255,255), stats)
@@ -527,5 +543,4 @@ def checkCrashes(car0, car1):
             return True
 
 intro_screen()
-#run_game()
 
