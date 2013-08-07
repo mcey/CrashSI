@@ -301,13 +301,13 @@ def run_game(level):
 
     
     cars = []
-    infoScreen = Button(screen, 'InfoScreen', (5, 400))
+    buttonPanel = Button(screen, 'MidPanel', (5, 400))
     hour_glass = hourGlass(screen, 'hourGlassDown.png',
-                               (infoScreen.pos.x + 215, infoScreen.pos.y + 20))
+                               (buttonPanel.pos.x + 85, buttonPanel.pos.y + 20))
     reset = Button(screen, 'Reset',
-                           (infoScreen.pos.x + 150, infoScreen.pos.y + 20))
+                           (buttonPanel.pos.x + 15, buttonPanel.pos.y + 20))
     ret = Button(screen, 'Return',
-                            (infoScreen.pos.x + 150, infoScreen.pos.y + 85))
+                            (buttonPanel.pos.x + 15, buttonPanel.pos.y + 85))
     
     pause = True;  #level starts paused
     if level == 1:
@@ -325,7 +325,6 @@ def run_game(level):
 
         target = Button(screen, 'Target', (410,100))
 
-        info_screen_visible = True
         i = 0
         carClicked = False
         crashPlayed = False
@@ -336,8 +335,7 @@ def run_game(level):
             #
             time_passed = clock.tick(50)            
             screen.blit(background, background.get_rect())
-            if(info_screen_visible):
-                infoScreen.blitme()
+            buttonPanel.blitme()                
             hour_glass.blitme()
             reset.blitme()
             ret.blitme()
@@ -382,17 +380,16 @@ def run_game(level):
                 car.blitme()
                 if(car.speed < 0.05 and car.friction > 0): #friction > 0 implies car is a wreck
                     if(within_boundaries(car.pos, target, False)):
-                        win_button = Button(screen, 'InfoScreen', (200,250))
+                        win_button = Button(screen, 'InfoScreen', (300,250))
                         win_button.blitme()
-                        write_to_button("YOU WON\nHere are some stats:", screen, 20, black, white, win_button)
+                        write_to_button("SUCCESS!..\nHere are some stats:", screen, 20, black, white, win_button, False)
                         if(level not in won_levels):
                             won_levels.append(level)
                         break
                     elif(car.speed == 0):
-                        lose_button = Button(screen, 'InfoScreen', (200,250))
+                        lose_button = Button(screen, 'InfoScreen', (300,250))
                         lose_button.blitme()
                         write_to_button("NOPE\n", screen, 40, black, white, lose_button)  
-                        info_screen_visible = False
                 if(within_boundaries((x,y), car, True)):
                     stats = Button(screen, 'Gen', (car.pos.x+50, car.pos.y-50))
                     stats.blitme()
@@ -489,19 +486,21 @@ def within_boundaries(c, obj, central_coordinates):
             c[1] > (obj.pos.y - obj.image_h / 2))
     return result
 
-def write_to_button(str, screen, size, color, bg, button):
+def write_to_button(str, screen, size, color, bg, button, centered = True):
     if(str != ''):
         str = str.split("\n")
         font = pygame.font.SysFont("buxton sketch", size)
-        pos_v = button.pos[1] 
-        offset_h = (button.image_h - font.size("C")[1] - 18 ) / 2
-        pos_v += offset_h
+        pos_y = button.pos[1] + 15         
+        if(centered):
+            pos_y += ((button.image_h - font.size("C")[1] - 18 ) / 2) - 15           
         for s in str:
+            pos_x = button.pos[0] + 15
             text_w = font.size(s)[0]
-            offset_w = (button.image_w - text_w) / 2
+            if(centered):
+                pos_x += ((button.image_w - text_w) / 2) - 15
             text = font.render(s, True, color,bg)
-            screen.blit(text,(button.pos[0] + offset_w, pos_v))
-            pos_v += size + 5
+            screen.blit(text,(pos_x, pos_y))
+            pos_y += size + 5
 
 def write_monologue(str, screen, size, color, bg, pos):    
     font = pygame.font.SysFont("buxton sketch", 25)
