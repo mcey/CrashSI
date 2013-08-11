@@ -126,13 +126,13 @@ class Car(Sprite):
         # (i.e. right bottom is 1, 1), and rotate() rotates 
         # counter-clockwise, the angle must be inverted to 
         # work correctly.
-        if(self.direction.angle == 0):
-            self.image = pygame.image.load(self.imgFileName[:-6] + '00.png').convert_alpha()
-        elif(self.direction.angle == -90):
-            self.image = pygame.image.load(self.imgFileName[:-6] + '01.png').convert_alpha()
-        elif(self.direction.angle == 180):
+        if(self.direction.angle == 0):#heading right
+            self.image = pygame.image.load(self.imgFileName[:-6] + '00.png').convert_alpha() 
+        elif(self.direction.angle == -90):#heading up
+            self.image = pygame.image.load(self.imgFileName[:-6] + '01.png').convert_alpha() 
+        elif(self.direction.angle == 180):#heading left
             self.image = pygame.image.load(self.imgFileName[:-6] + '10.png').convert_alpha()
-        else:
+        else:#heading down
             self.image = pygame.image.load(self.imgFileName[:-6] + '11.png').convert_alpha()
      
         # Compute and apply the displacement to the position 
@@ -150,8 +150,9 @@ class Car(Sprite):
             self.speed = 0
         displacement = vec2d(    
             self.direction.x * self.speed * time_passed,
-            self.direction.y * self.speed * time_passed)        
+            self.direction.y * self.speed * time_passed)       
         self.pos += displacement
+        
         
         # When the image is rotated, its size is changed.
         # We must take the size into account for detecting 
@@ -174,6 +175,23 @@ class Car(Sprite):
             self.pos.y = bounds_rect.bottom
             self.direction.y *= -1
     
+    def printable(self):#prints a surface with the car's picture and stats    
+        font = pygame.font.SysFont("buxton sketch", 14)
+        image_s = transform.smoothscale(self.image,(int(self.image_w/2), int(self.image_h/2)))
+        surface = pygame.surface.Surface((250,50),pygame.SRCALPHA, 32)        
+        surface.blit(image_s, (0,0))
+        text = "was"
+        if(self.speed == 0):
+            text += " at a stop;"
+        else:
+            text += " going " + str(self.speed) + "m/s;"
+        text += " had a mass of " +str(self.mass)
+        alt_text = "had a momentum of " + str(self.speed * self.mass) + " kg.m/s"
+        surface.blit(font.render(text, True, black),(35,0))
+        surface.blit(font.render(alt_text, True, black),(35,14))
+        
+        return surface
+    
     def blitme(self):
         """ Blit the car onto the screen that was provided in
             the constructor.
@@ -191,15 +209,6 @@ class Car(Sprite):
     #------------------ PRIVATE PARTS ------------------#
     
     _counter = 0
-    
-##    def _change_direction(self, time_passed):
-##        """ Turn by 45 degrees in a random direction once per
-##            0.4 to 0.5 seconds.
-##        """
-##        self._counter += time_passed
-##        if self._counter > randint(400, 500):
-##            self.direction.rotate(45 * randint(-1, 1))
-##            self._counter = 0
 
 SCREEN_WIDTH, SCREEN_HEIGHT = 800, 600
 screen = pygame.display.set_mode(
@@ -212,6 +221,7 @@ won_levels = []
 
 black = (0,0,0)
 white = (255,255,255)
+red = (255,0,0)
 
 
 def intro_screen():
@@ -302,6 +312,7 @@ def run_game(level):
 
     
     cars = []
+    inactive_cars = []
     buttonPanel = Button(screen, 'MidPanel', (5, 400))
     hour_glass = hourGlass(screen, 'hourGlassDown.png',
                                (buttonPanel.pos.x + 85, buttonPanel.pos.y + 20))
@@ -309,6 +320,7 @@ def run_game(level):
                            (buttonPanel.pos.x + 15, buttonPanel.pos.y + 20))
     ret = Button(screen, 'Return',
                             (buttonPanel.pos.x + 15, buttonPanel.pos.y + 85))
+    arrow = Button(screen, 'Arrow', (50,50))
     
     spots_shown = False
     tutorial_shown = False
@@ -328,6 +340,7 @@ def run_game(level):
         car1.direction.rotate(-90)
         
         original_pos = car1.pos
+        crash_pos = vec2d(0,0)
 
         target = Button(screen, 'Target', (410,100))
         crash_spot = Button(screen, 'CrashSpot', (420, 250))
@@ -398,13 +411,13 @@ def run_game(level):
                             releasePosx = x
                             releasePosy = y                            
                             new_direction = vec2d(releasePosx - clickPosx, releasePosy - clickPosy).normalized()
-                            #NYIdraw_arrow(screen, new_direction.angle, original_pos,(releasePosx, releasePosy))
                             new_speed = int(vec2d(releasePosx - original_pos.x, releasePosy - original_pos.y).get_length() / 50) / 10 + 0.02
                             print(new_speed)
                             car1.speed = new_speed
                             car_start_sound.play()
                 elif(carClicked and hour_glass.pause):
                     car1.pos = vec2d(car1.pos.x,y) #x axis immutable
+                    
                
             for car in cars:
                 car.update(time_passed)
@@ -414,7 +427,9 @@ def run_game(level):
                     if(within_boundaries(car.pos, target, False)):
                         win_button = Button(screen, 'InfoScreen', (300,250))
                         win_button.blitme()
-                        write_to_button("SUCCESS!..\nHere are some stats:", screen, 20, black, white, win_button, False)
+                        write_to_button("SUCCESS!..", screen, 20, black, white, win_button, False)
+                        screen.blit(inactive_cars[0].printable(), (win_button.pos.x + 20, win_button.pos.y + 40))
+                        screen.blit(inactive_cars[1].printable(), (win_button.pos.x + 20, win_button.pos.y + 80))
                         if(level not in won_levels):
                             won_levels.append(level)
                         break
@@ -430,6 +445,9 @@ def run_game(level):
                     
             if(len(cars) > 1 and checkCrashes(cars[0], cars[1]) and not hour_glass.pause):
                 wreck = cars[0].crash(cars[1])
+                inactive_cars.append(cars[0])
+                inactive_cars.append(cars[1])
+                crash_pos = wreck.pos
                 if(not crashPlayed):
                     crashPlayed = True
                     crash_sound.play()
@@ -560,8 +578,7 @@ def write_monologue(str, screen, size, color, bg, pos):
         
             
 def draw_arrow(screen, angle, upper, lower):
-    arrow = pygame.image.load('arrow.png').convert_alpha()
-    original_length = arrow.get_size()
+    original_length = arrow.image_h
     scale_factor = (lower[1] - upper[1]) / original_length[1]
     new_w = (int)(scale_factor * original_length[0])
     new_h = (int)(lower[1] - upper[1])
