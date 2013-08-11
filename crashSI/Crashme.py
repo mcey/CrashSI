@@ -110,10 +110,7 @@ class Car(Sprite):
         return wreck
 
 
-    def setVelocity(self, vel):
-        self.speed = vel.get_length() / 1000
-        print('speed is now=', self.speed)
-            
+               
     def update(self, time_passed):
         """ Update the car.
         
@@ -311,8 +308,6 @@ def run_game(level):
     car_start_sound = pygame.mixer.Sound('car_start.wav')
 
     
-    cars = []
-    inactive_cars = []
     buttonPanel = Button(screen, 'MidPanel', (5, 400))
     hour_glass = hourGlass(screen, 'hourGlassDown.png',
                                (buttonPanel.pos.x + 85, buttonPanel.pos.y + 20))
@@ -321,39 +316,45 @@ def run_game(level):
     ret = Button(screen, 'Return',
                             (buttonPanel.pos.x + 15, buttonPanel.pos.y + 85))
     arrow = Button(screen, 'Arrow', (50,50))
-    
-    spots_shown = False
-    tutorial_shown = False
-    counter = 0     
+        
     pause = True;  #level starts paused
     if level == 1:
-        background = pygame.image.load('bg_level02.png')
-        car0 = Car(screen,'darkSprite00.png',
-                        (435,340),
-                        (1,0), 500, 0, 0)
-        cars.append(car0)
-        car1 = Car(screen,'redSprite00.png',
-                        (435,390),
-                        (1,0), 500, 0, 0)
-        cars.append(car1)  
-        car0.direction.rotate(-90)
-        car1.direction.rotate(-90)
-        
-        original_pos = car1.pos
-        crash_pos = vec2d(0,0)
-
-        target = Button(screen, 'Target', (410,100))
-        crash_spot = Button(screen, 'CrashSpot', (420, 250))
-        target_spot = Button(screen, 'ShowSpot', (420,30))
-        button_gen = Button(screen, 'Gen', (280, 390))
-        
-        
-        i = 0
-        carClicked = False
-        crashPlayed = False
+        level_ready = False
         # The main game loop
         #
         while True:
+            if(not level_ready):
+                cars = []
+                inactive_cars = []  
+                suspend_for_input = False
+                spots_shown = False
+                tutorial_shown = False
+                counter = 0                 
+                background = pygame.image.load('bg_level02.png')
+                car0 = Car(screen,'darkSprite00.png',
+                                (435,340),
+                                (1,0), 500, 0, 0)
+                cars.append(car0)
+                car1 = Car(screen,'redSprite00.png',
+                                (435,390),
+                                (1,0), 500, 0, 0)
+                cars.append(car1)  
+                car0.direction.rotate(-90)
+                car1.direction.rotate(-90)
+                
+                original_pos = car1.pos
+                crash_pos = vec2d(0,0)
+        
+                target = Button(screen, 'Target', (410,100))
+                cop_spot = Button(screen, 'ShowSpot', (420, 250))
+                button_gen = Button(screen, 'Gen', (280, 390))
+                
+                
+                i = 0
+                carClicked = False
+                crashPlayed = False
+                level_ready = True    
+            
             # Limit frame speed to 50 FPS
             #
             time_passed = clock.tick(50)            
@@ -367,81 +368,81 @@ def run_game(level):
                 time_passed = 0;
             if(not spots_shown):     #Show the crash and final positions
                 if(counter <= 75):
-                    crash_spot.blitme()
+                    cop_spot.blitme()
+                    write_to_button("          The crash"
+                                    "\n          happened here", screen, 15, black, white, cop_spot, False)
                 elif(counter <= 150):
-                    target_spot.blitme()
-                    write_to_button('And the wreck\nwas found here', screen, 15, black, white, target_spot)
+                    cop_spot.pos = vec2d((420,30))
+                    cop_spot.blitme()
+                    write_to_button("          And the wreck"
+                                    "\n          was found here", screen, 15, black, white, cop_spot, False)
                 counter += 1
                 if(counter > 150):
                     spots_shown = True
                     counter = 0
-            if(not tutorial_shown and spots_shown):   #Show tutorial bubbles
+            elif(not tutorial_shown):   #Show tutorial bubbles
                 if(counter <= 75):
                     button_gen.blitme()
                     write_to_button("Click&Drag the car\nto set its velocity",screen, 14, black,white,button_gen)
                 elif(counter <= 150):
                     button_gen.pos = vec2d((150, 450))
                     button_gen.blitme()
-                    write_to_button("Flick the switch\nON", screen, 16, black,white,button_gen)
+                    write_to_button("And flick the\nswitch ON", screen, 16, black,white,button_gen)
                 counter += 1
                 if(counter > 150):
-                    tutorial_shown = True             
-            x,y = mouse.get_pos()
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    exit_game()
-                elif(event.type == MOUSEBUTTONDOWN and within_boundaries((x,y), hour_glass, False)):
-                    hour_glass.update()
-                    hour_glass.blitme()
-                elif(event.type == MOUSEBUTTONDOWN and within_boundaries((x,y), reset, False)):
-                    #pygame.display.quit() shut down the working instance
-                    run_game(level)
-                elif(event.type == MOUSEBUTTONDOWN and within_boundaries((x,y), ret, False)):
-                    #pygame.display.quit() shut down the working instance
-                    intro_screen()
-                elif(event.type == MOUSEBUTTONDOWN or event.type == MOUSEBUTTONUP):
-                    if(event.type == MOUSEBUTTONDOWN):
-                        if(within_boundaries((x,y), car1, True)):
-                            carClicked = True
-                            clickPosx = x
-                            clickPosy = y                           
-                    else:    #event.type == MOUSEBUTTONUP
-                        if(carClicked):
-                            carClicked = False
-                            releasePosx = x
-                            releasePosy = y                            
-                            new_direction = vec2d(releasePosx - clickPosx, releasePosy - clickPosy).normalized()
-                            new_speed = int(vec2d(releasePosx - original_pos.x, releasePosy - original_pos.y).get_length() / 50) / 10 + 0.02
-                            print(new_speed)
-                            car1.speed = new_speed
-                            car_start_sound.play()
-                elif(carClicked and hour_glass.pause):
-                    car1.pos = vec2d(car1.pos.x,y) #x axis immutable
-                    
+                    tutorial_shown = True
+            else:
+                x,y = mouse.get_pos()
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        exit_game()
+                    elif(event.type == MOUSEBUTTONDOWN and within_boundaries((x,y), hour_glass, False)):
+                        hour_glass.update()
+                        hour_glass.blitme()
+                    elif(event.type == MOUSEBUTTONDOWN and within_boundaries((x,y), reset, False)):
+                        level_ready = False
+                        if(not hour_glass.pause):
+                            hour_glass.update()
+                        break;
+                    elif(event.type == MOUSEBUTTONDOWN and within_boundaries((x,y), ret, False)):
+                        #pygame.display.quit() shut down the working instance
+                        intro_screen()
+                    elif(event.type == MOUSEBUTTONDOWN or event.type == MOUSEBUTTONUP):
+                        if(event.type == MOUSEBUTTONDOWN):
+                            if(within_boundaries((x,y), car1, True)):
+                                carClicked = True
+                                clickPosx = x
+                                clickPosy = y                           
+                        else:    #event.type == MOUSEBUTTONUP
+                            if(carClicked):
+                                carClicked = False
+                                releasePosx = x
+                                releasePosy = y                            
+                                new_direction = vec2d(releasePosx - clickPosx, releasePosy - clickPosy).normalized()
+                                new_speed = int(vec2d(releasePosx - original_pos.x, releasePosy - original_pos.y).get_length() / 50) / 10 + 0.02
+                                print(new_speed)
+                                car1.speed = new_speed
+                                car_start_sound.play()
+                    elif(carClicked and hour_glass.pause):
+                        car1.pos = vec2d(car1.pos.x,y) #x axis immutable
                
-            for car in cars:
-                car.update(time_passed)
-                if(spots_shown):
-                    car.blitme()
-                if(car.speed < 0.05 and car.friction > 0): #friction > 0 implies car is a wreck
-                    if(within_boundaries(car.pos, target, False)):
-                        win_button = Button(screen, 'InfoScreen', (300,250))
-                        win_button.blitme()
-                        write_to_button("SUCCESS!..", screen, 20, black, white, win_button, False)
-                        screen.blit(inactive_cars[0].printable(), (win_button.pos.x + 20, win_button.pos.y + 40))
-                        screen.blit(inactive_cars[1].printable(), (win_button.pos.x + 20, win_button.pos.y + 80))
-                        if(level not in won_levels):
-                            won_levels.append(level)
-                        break
-                    elif(car.speed == 0):
-                        lose_button = Button(screen, 'InfoScreen', (300,250))
-                        lose_button.blitme()
-                        write_to_button("NOPE\nYou're off the final mark\nHit Reset to try again\nHit Return to quit", screen, 30, black, white, lose_button)  
-                if(within_boundaries((x,y), car, True)):
-                    stats = Button(screen, 'Gen', (car.pos.x+50, car.pos.y-50))
-                    stats.blitme()
-                    info = "Mass=" + str(car.mass) + "\n Velocity=" + str(round(car.speed,2))
-                    write_to_button(info, screen, 15, (0,0,0), (255,255,255), stats)
+                for car in cars:
+                    car.update(time_passed)
+                    if(spots_shown):
+                        car.blitme()
+                    if(car.speed < 0.05 and car.friction > 0): #friction > 0 implies car is a wreck
+                        if(within_boundaries(car.pos, target, False)):
+                            win_report(screen, level, inactive_cars)
+                            break
+                        elif(car.speed == 0):
+                            lose_button = Button(screen, 'InfoScreen', (300,250))
+                            lose_button.blitme()
+                            write_to_button("NOPE!\nYou're off the final mark.\nHit Reset to try again.\nHit Return to quit.", screen, 25, black, white, lose_button, False)  
+                    if(within_boundaries((x,y), car, True)):
+                        stats = Button(screen, 'Gen', (car.pos.x+50, car.pos.y-50))
+                        stats.blitme()
+                        info = "Mass=" + str(car.mass) + "\n Velocity=" + str(round(car.speed,2))
+                        write_to_button(info, screen, 15, (0,0,0), (255,255,255), stats)
                     
             if(len(cars) > 1 and checkCrashes(cars[0], cars[1]) and not hour_glass.pause):
                 wreck = cars[0].crash(cars[1])
@@ -548,9 +549,18 @@ def write_to_button(str, screen, size, color, bg, button, centered = True):
             text_w = font.size(s)[0]
             if(centered):
                 pos_x += ((button.image_w - text_w) / 2) - 15
-            text = font.render(s, True, color,bg)
+            text = font.render(s, True, color)
             screen.blit(text,(pos_x, pos_y))
             pos_y += size + 5
+            
+def win_report(screen, level, inactive_cars):
+    win_button = Button(screen, 'InfoScreen', (300,250))
+    win_button.blitme()
+    write_to_button("SUCCESS!..", screen, 20, black, white, win_button, False)
+    screen.blit(inactive_cars[0].printable(), (win_button.pos.x + 20, win_button.pos.y + 40))
+    screen.blit(inactive_cars[1].printable(), (win_button.pos.x + 20, win_button.pos.y + 80))
+    if(level not in won_levels):
+        won_levels.append(level)    
 
 def write_monologue(str, screen, size, color, bg, pos):    
     font = pygame.font.SysFont("buxton sketch", 25)
