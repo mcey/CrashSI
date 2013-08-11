@@ -1,0 +1,2 @@
+-Some runs, there are instances where the tutorial buttons 1 & 2 are persistently showing even after the 2nd reset.
+Could not repro "all the time"

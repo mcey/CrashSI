@@ -332,6 +332,7 @@ def run_game(level):
                     spots_shown = False
                     tutorial_shown = False
                     tutorials += 1
+                    print(tutorials)
                 counter = 0                 
                 background = pygame.image.load('bg_level02.png')
                 car0 = Car(screen,'darkSprite00.png',
@@ -394,9 +395,9 @@ def run_game(level):
                 counter += 1
                 if(counter > 150):
                     tutorial_shown = True
-            else:
-                x,y = mouse.get_pos()
-                for event in pygame.event.get():
+            x,y = mouse.get_pos()
+            for event in pygame.event.get():
+                if(spots_shown):
                     if event.type == pygame.QUIT:
                         exit_game()
                     elif(event.type == MOUSEBUTTONDOWN and within_boundaries((x,y), hour_glass, False)):
@@ -428,8 +429,9 @@ def run_game(level):
                                 car_start_sound.play()
                     elif(carClicked and hour_glass.pause):
                         car1.pos = vec2d(car1.pos.x,y) #x axis immutable
-               
-                for car in cars:
+           
+            for car in cars:
+                if(spots_shown):
                     car.update(time_passed)
                     if(spots_shown):
                         car.blitme()
@@ -438,9 +440,7 @@ def run_game(level):
                             win_report(screen, level, inactive_cars)
                             break
                         elif(car.speed == 0):
-                            lose_button = Button(screen, 'InfoScreen', (300,250))
-                            lose_button.blitme()
-                            write_to_button("NOPE!\nYou're off the final mark.\nHit Reset to try again.\nHit Return to quit.", screen, 25, black, white, lose_button, False)  
+                            lose_report(screen)
                     if(within_boundaries((x,y), car, True)):
                         stats = Button(screen, 'Gen', (car.pos.x+50, car.pos.y-50))
                         stats.blitme()
@@ -564,7 +564,12 @@ def win_report(screen, level, inactive_cars):
     screen.blit(inactive_cars[1].printable(), (win_button.pos.x + 20, win_button.pos.y + 80))
     if(level not in won_levels):
         won_levels.append(level)    
-
+def lose_report(screen):
+    lose_button = Button(screen, 'InfoScreen', (300,250))
+    lose_button.blitme()
+    write_to_button("NOPE!\nYou're off the final mark.\n"
+                    "Hit Reset to try again.\n"
+                    "Hit Return to quit.", screen, 25, black, white, lose_button, False)      
 def write_monologue(str, screen, size, color, bg, pos):    
     font = pygame.font.SysFont("buxton sketch", 25)
     sequence = list(str)
