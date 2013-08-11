@@ -322,13 +322,16 @@ def run_game(level):
         level_ready = False
         # The main game loop
         #
-        while True:
+        tutorials = 0
+        while True:            
             if(not level_ready):
                 cars = []
                 inactive_cars = []  
                 suspend_for_input = False
-                spots_shown = False
-                tutorial_shown = False
+                if(tutorials < 2):
+                    spots_shown = False
+                    tutorial_shown = False
+                    tutorials += 1
                 counter = 0                 
                 background = pygame.image.load('bg_level02.png')
                 car0 = Car(screen,'darkSprite00.png',
