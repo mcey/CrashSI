@@ -59,7 +59,7 @@ class Car(Sprite):
     """ A car sprite."""
     def __init__(   
             self, screen, img_filename, init_position, 
-            init_direction, mass, speed, friction):
+            init_direction, mass, speed, friction, axes_mutable = (0,0)):
         """ Create a new Car.
             screen: 
                 The screen on which the car lives (must be a 
@@ -82,6 +82,7 @@ class Car(Sprite):
         self.speed = speed
         self.mass = mass
         self.friction = friction
+        self.axes_mutable = axes_mutable
         self.imgFileName = img_filename
         # base_image holds the original image
         self.base_image = pygame.image.load(img_filename).convert_alpha()
@@ -275,6 +276,12 @@ def level_intro_screen(level):
     "we have two speeders.\nBut one guy says he was stopped at the sign all "
     "proper.\n\nNow I say one moving car hitting a stationary car is not\nenough"
     " for their wreckage to drift so far.\nUse your fancy science son, prove me wrong...")  
+    dialogue.append("Lucky shot with the previous case...    \"Lucky.\"\n"
+                    "We have another collision at a nearby intersection.\n"
+                    "It's a residential neighbourhood, thankfully no casualties.\n\n"
+                    "Figure out their exact speeds at the moment of the crash\n"
+                    "Insurance purposes...  plus, I would be glad to add\n"
+                    "speeding charges along with endangerment.\n")
     lines  = dialogue[level-1]
     pos = vec2d(250,170)
     
@@ -332,7 +339,7 @@ def run_game(level):
                     tutorial_shown = False
                     tutorials += 1
                 counter = 0                 
-                background = pygame.image.load('bg_level02.png')
+                background = pygame.image.load('bg_level01.png')
                 car0 = Car(screen,'darkSprite00.png',
                                 (435,340),
                                 (1,0), 500, 0, 0)
@@ -474,27 +481,28 @@ def run_game(level):
                     tutorials += 1
                 counter = 0                 
                 background = pygame.image.load('bg_level02.png')
-                car0 = Car(screen,'darkSprite00.png',
-                                (435,340),
-                                (1,0), 500, 0, 0)
+                car0 = Car(screen,'brownSprite00.png',
+                                (515,400),
+                                (0,-1), 500, 0, 0,(0,1))
                 cars.append(car0)
                 car1 = Car(screen,'redSprite00.png',
-                                (435,390),
-                                (1,0), 500, 0, 0)
+                                (625,350),
+                                (-1,0), 500, 0, 0,(1,0))
                 cars.append(car1)  
-                car0.direction.rotate(-90)
-                car1.direction.rotate(-90)
                 
                 original_pos = car1.pos
                 crash_pos = vec2d(0,0)
         
-                target = Button(screen, 'Target', (410,100))
-                cop_spot = Button(screen, 'ShowSpot', (420, 250))
+                target = Button(screen, 'Target', (300,250))
+                crash = Button(screen, 'Crash', (490,320))
+                cop_spot = Button(screen, 'ShowSpot', (crash.pos.x + 20, crash.pos.y - 70))
                 button_gen = Button(screen, 'Gen', (280, 390))
                 
                 
                 i = 0
-                carClicked = False
+                carClicked = []
+                carClicked.append(False)
+                carClicked.append(False)
                 crashPlayed = False
                 level_ready = True    
             
@@ -507,6 +515,7 @@ def run_game(level):
             reset.blitme()
             ret.blitme()
             target.blitme()
+            crash.blitme()
             if(hour_glass.pause):
                 time_passed = 0;
             if(not spots_shown):     #Show the crash and final positions
@@ -515,7 +524,7 @@ def run_game(level):
                     write_to_button("          The crash"
                                     "\n          happened here", screen, 15, black, white, cop_spot, False)
                 elif(counter <= 150):
-                    cop_spot.pos = vec2d((420,30))
+                    cop_spot.pos = vec2d((target.pos.x + 20, target.pos.y - 70))
                     cop_spot.blitme()
                     write_to_button("          And the wreck"
                                     "\n          was found here", screen, 15, black, white, cop_spot, False)
@@ -552,22 +561,32 @@ def run_game(level):
                         intro_screen()
                     elif(event.type == MOUSEBUTTONDOWN or event.type == MOUSEBUTTONUP):
                         if(event.type == MOUSEBUTTONDOWN):
-                            if(within_boundaries((x,y), car1, True)):
-                                carClicked = True
-                                clickPosx = x
-                                clickPosy = y                           
+                            for i in range(0,2):
+                                if(within_boundaries((x,y), cars[i], True)):
+                                    carClicked[i] = True
+                                    clickPosx = x
+                                    clickPosy = y                           
                         else:    #event.type == MOUSEBUTTONUP
-                            if(carClicked):
-                                carClicked = False
-                                releasePosx = x
-                                releasePosy = y 
-                                car_start_sound.play()
-                    elif(carClicked and hour_glass.pause):
-                        car1.pos = vec2d(car1.pos.x,y) #x axis immutable
-                        new_direction = vec2d(car1.pos.x - clickPosx, car1.pos.y - clickPosy).normalized()
-                        new_speed = int(vec2d(car1.pos.x  - original_pos.x, car1.pos.y - original_pos.y).get_length() / 50) / 10 + 0.02
-                        print(new_speed)
-                        car1.speed = new_speed                        
+                            for i in range(0,2):
+                                if(carClicked[i]):
+                                    carClicked[i] = False
+                                    releasePosx = x
+                                    releasePosy = y 
+                                    car_start_sound.play()
+                    elif((carClicked[0] or carClicked[1]) and hour_glass.pause):
+                        for i in range(0,2):
+                            pos_x = x
+                            pos_y = y
+                            if(carClicked[i]):
+                                if(not cars[i].axes_mutable[0]):
+                                    pos_x = cars[i].pos.x
+                                if(not cars[i].axes_mutable[1]):
+                                    pos_y = cars[i].pos.y
+                                cars[i].pos = vec2d(pos_x,pos_y) #x axis immutable
+                                new_direction = vec2d(cars[i].pos.x - clickPosx, cars[i].pos.y - clickPosy).normalized()
+                                new_speed = int(vec2d(cars[i].pos.x  - original_pos.x, cars[i].pos.y - original_pos.y).get_length() / 50) / 10 + 0.02
+                                print(new_speed)
+                                cars[i].speed = new_speed                        
            
             for car in cars:
                 if(spots_shown):
