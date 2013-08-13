@@ -59,7 +59,7 @@ class Car(Sprite):
     """ A car sprite."""
     def __init__(   
             self, screen, img_filename, init_position, 
-            init_direction, mass, speed, friction, axes_mutable = (0,0)):
+            init_direction, mass, speed = 0, friction = 0, axes_mutable = (0,0)):
         """ Create a new Car.
             screen: 
                 The screen on which the car lives (must be a 
@@ -494,7 +494,7 @@ def run_game(level):
                 crash_pos = vec2d(0,0)
         
                 target = Button(screen, 'Target', (300,250))
-                crash = Button(screen, 'Crash', (490,320))
+                crash = Button(screen, 'Crash', (car0.pos.x - 30,car1.pos.y - 30))
                 cop_spot = Button(screen, 'ShowSpot', (crash.pos.x + 20, crash.pos.y - 70))
                 button_gen = Button(screen, 'Gen', (280, 390))
                 
@@ -551,6 +551,7 @@ def run_game(level):
                     elif(event.type == MOUSEBUTTONDOWN and within_boundaries((x,y), hour_glass, False)):
                         hour_glass.update()
                         hour_glass.blitme()
+                        adjust_for_crash(cars, crash)
                     elif(event.type == MOUSEBUTTONDOWN and within_boundaries((x,y), reset, False)):
                         level_ready = False
                         if(not hour_glass.pause):
@@ -694,7 +695,30 @@ def draw_arrow(screen, angle, upper, lower):
         pygame.transform.rotate(arrow, angle - 90)    
         transform.smoothscale(arrow, (new_w, new_h))
         screen.blit(arrow, upper)
-       
+
+def adjust_for_crash(cars, crash_spot):
+    index = 3
+    longest = 0
+    shortest = 9999
+    for i in range(0,2):
+        distance = cars[i].pos - vec2d(crash_spot.pos.x + crash_spot.image_w / 2, 
+                                       crash_spot.pos.y + crash_spot.image_h / 2)
+        time = int(distance.get_length() / cars[i].speed)
+        print(distance.get_length())
+        if(time > longest):
+            longest = time
+            index = i            
+        if(time < shortest): 
+            shortest = time
+    displacement = ((longest - shortest) * cars[index].speed) * cars[index].direction
+    cars[index].pos += displacement
+            
+def LCM(x,y):
+    temp = x
+    while temp%y != 0:
+        temp += x
+    return temp
+
 def exit_game():
     pygame.display.quit()
     pygame.mixer.music.stop()
