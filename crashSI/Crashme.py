@@ -381,7 +381,7 @@ def run_game(level):
             ret.blitme()
             target.blitme()
             show_spots.blitme()
-            write_to_button("Show Spots", screen, 15, black,white,show_spots)
+            write_to_button("Show Instructions", screen, 14, black,white,show_spots)
             show_tutorial.blitme()
             write_to_button("Show Tutorial", screen, 15, black, white, show_tutorial)             
             if(hour_glass.pause):
@@ -401,15 +401,15 @@ def run_game(level):
                     spots_shown = True
                     counter = 0
             elif(not tutorial_shown):   #Show tutorial bubbles
-                if(counter <= 75):
+                if(counter <= 100):
                     button_gen.blitme()
                     write_to_button("Click&Drag the car\nto set its velocity",screen, 14, black,white,button_gen)
-                elif(counter <= 150):
+                elif(counter <= 200):
                     button_gen.pos = vec2d((150, 450))
                     button_gen.blitme()
                     write_to_button("And flick the\nswitch ON", screen, 16, black,white,button_gen)
                 counter += 1
-                if(counter > 150):
+                if(counter > 200):
                     tutorial_shown = True
             x,y = mouse.get_pos()
             for event in pygame.event.get():
@@ -463,6 +463,7 @@ def run_game(level):
                             break
                         elif(car.speed == 0):
                             lose_report(screen)
+                            hour_glass.stop()
                     if(within_boundaries((x,y), car, True)):
                         stats = Button(screen, 'Gen', (car.pos.x+50, car.pos.y-50))
                         stats.blitme()
@@ -535,7 +536,7 @@ def run_game(level):
             target.blitme()
             crash.blitme()
             show_spots.blitme()
-            write_to_button("Show Spots", screen, 15, black,white,show_spots)
+            write_to_button("Show Instructions", screen, 14, black,white,show_spots)
             show_tutorial.blitme()
             write_to_button("Show Tutorial", screen, 15, black, white, show_tutorial)             
             if(hour_glass.pause):
@@ -555,15 +556,15 @@ def run_game(level):
                     spots_shown = True
                     counter = 0
             elif(not tutorial_shown):   #Show tutorial bubbles
-                if(counter <= 75):
+                if(counter <= 100):
                     button_gen.blitme()
                     write_to_button("Click&Drag the car\nto set its velocity",screen, 14, black,white,button_gen)
-                elif(counter <= 150):
+                elif(counter <= 200):
                     button_gen.pos = vec2d((150, 450))
                     button_gen.blitme()
                     write_to_button("And flick the\nswitch ON", screen, 16, black,white,button_gen)
                 counter += 1
-                if(counter > 150):
+                if(counter > 200):
                     tutorial_shown = True
             x,y = mouse.get_pos()
             for event in pygame.event.get():
@@ -628,6 +629,7 @@ def run_game(level):
                             break
                         elif(car.speed == 0):
                             lose_report(screen)
+                            hour_glass.stop()
                     if(within_boundaries((x,y), car, True)):
                         stats = Button(screen, 'Gen', (car.pos.x+50, car.pos.y-50))
                         stats.blitme()
@@ -687,7 +689,7 @@ def run_game(level):
                 time_passed = clock.tick(50)            
                 screen.blit(background, background.get_rect())
                 show_spots.blitme()
-                write_to_button("Show Spots", screen, 15, black,white,show_spots)
+                write_to_button("Show Instructions", screen, 14, black,white,show_spots)
                 show_tutorial.blitme()
                 write_to_button("Show Tutorial", screen, 15, black, white, show_tutorial) 
                 buttonPanel.blitme()                
@@ -713,15 +715,15 @@ def run_game(level):
                         spots_shown = True
                         counter = 0
                 elif(not tutorial_shown):   #Show tutorial bubbles
-                    if(counter <= 75):
+                    if(counter <= 100):
                         button_gen.blitme()
                         write_to_button("Click&Drag the car\nto set its velocity",screen, 14, black,white,button_gen)
-                    elif(counter <= 150):
+                    elif(counter <= 200):
                         button_gen.pos = vec2d((150, 450))
                         button_gen.blitme()
                         write_to_button("And flick the\nswitch ON", screen, 16, black,white,button_gen)
                     counter += 1
-                    if(counter > 150):
+                    if(counter > 200):
                         tutorial_shown = True
                 x,y = mouse.get_pos()
                 for event in pygame.event.get():
@@ -786,6 +788,7 @@ def run_game(level):
                                 break
                             elif(car.speed == 0):
                                 lose_report(screen)
+                                hour_glass.stop()
                         if(within_boundaries((x,y), car, True)):
                             stats = Button(screen, 'Gen', (car.pos.x+50, car.pos.y-50))
                             stats.blitme()
