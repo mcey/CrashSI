@@ -35,6 +35,10 @@ class hourGlass(Sprite):
         """
         # The hourglass image is placed at self.pos.
         self.screen.blit(self.image, self.pos)
+    def stop(self):
+        if(not self.pause):
+            self.update()
+        
 
 class Button(Sprite):
     """ A button sprite"""
@@ -285,7 +289,7 @@ def level_intro_screen(level):
     dialogue.append("This guy has the audacity to run down a biker, and claim\n"
                     "innocence.         \nSays the biker jumped out from a side-road\n"
                     "speeding.\nBiker's fine and pressing charges, a lovely little lady.\n"
-                    "And she's getting a big settlement if she was going\nslower than 10km/s\n"
+                    "And she's getting a big settlement if she was going\nslower than 10km/h\n"
                     "..Can't believe she's actually unhurt; helms works wonders.")
     lines  = dialogue[level-1]
     pos = vec2d(250,170)
@@ -331,18 +335,15 @@ def run_game(level):
     pause = True;  #level starts paused
     if level == 1:
         level_ready = False
+        spots_shown = False
+        tutorial_shown = False        
         # The main game loop
         #
-        tutorials = 0
         while True:            
             if(not level_ready):
                 cars = []
                 inactive_cars = []  
                 suspend_for_input = False
-                if(tutorials < 2):
-                    spots_shown = False
-                    tutorial_shown = False
-                    tutorials += 1
                 counter = 0                 
                 background = pygame.image.load("bg_level"+str(level)+".png")
                 car0 = Car(screen,'darkSprite00.png',
@@ -357,6 +358,8 @@ def run_game(level):
                 car1.direction.rotate(-90)
                 crash_pos = vec2d(0,0)
         
+                show_tutorial= Button(screen, 'Gen' , (0,0))
+                show_spots = Button(screen, 'Gen', (0,show_tutorial.image_h))         
                 target = Button(screen, 'Target', (410,100))
                 crash = Button(screen, 'Crash', (405,310))
                 cop_spot = Button(screen, 'ShowSpot', (420, 250))
@@ -373,10 +376,14 @@ def run_game(level):
             time_passed = clock.tick(50)            
             screen.blit(background, background.get_rect())
             buttonPanel.blitme()                
-            hour_glass.blitme()
+            hour_glass.blitme()             
             reset.blitme()
             ret.blitme()
             target.blitme()
+            show_spots.blitme()
+            write_to_button("Show Spots", screen, 15, black,white,show_spots)
+            show_tutorial.blitme()
+            write_to_button("Show Tutorial", screen, 15, black, white, show_tutorial)             
             if(hour_glass.pause):
                 time_passed = 0;
             if(not spots_shown):     #Show the crash and final positions
@@ -420,6 +427,12 @@ def run_game(level):
                     elif(event.type == MOUSEBUTTONDOWN and within_boundaries((x,y), ret, False)):
                         #pygame.display.quit() shut down the working instance
                         intro_screen()
+                    elif(event.type == MOUSEBUTTONDOWN and within_boundaries((x,y), show_tutorial, False)):
+                        hour_glass.stop()
+                        tutorial_shown = False
+                    elif(event.type == MOUSEBUTTONDOWN and within_boundaries((x,y), show_spots, False)):
+                        hour_glass.stop()
+                        spots_shown = False                                                    
                     elif(event.type == MOUSEBUTTONDOWN or event.type == MOUSEBUTTONUP):
                         if(event.type == MOUSEBUTTONDOWN):
                             if(within_boundaries((x,y), car1, True)):
@@ -496,7 +509,8 @@ def run_game(level):
                 
                 original_pos = car1.pos
                 crash_pos = vec2d(0,0)
-        
+                show_tutorial= Button(screen, 'Gen' , (0,0))
+                show_spots = Button(screen, 'Gen', (0,show_tutorial.image_h))                     
                 target = Button(screen, 'Target', (300,250))
                 crash = Button(screen, 'Crash', (car0.pos.x - 30,car1.pos.y - 30))
                 cop_spot = Button(screen, 'ShowSpot', (crash.pos.x + 20, crash.pos.y - 70))
@@ -520,6 +534,10 @@ def run_game(level):
             ret.blitme()
             target.blitme()
             crash.blitme()
+            show_spots.blitme()
+            write_to_button("Show Spots", screen, 15, black,white,show_spots)
+            show_tutorial.blitme()
+            write_to_button("Show Tutorial", screen, 15, black, white, show_tutorial)             
             if(hour_glass.pause):
                 time_passed = 0;
             if(not spots_shown):     #Show the crash and final positions
@@ -564,6 +582,12 @@ def run_game(level):
                     elif(event.type == MOUSEBUTTONDOWN and within_boundaries((x,y), ret, False)):
                         #pygame.display.quit() shut down the working instance
                         intro_screen()
+                    elif(event.type == MOUSEBUTTONDOWN and within_boundaries((x,y), show_tutorial, False)):
+                        hour_glass.stop()
+                        tutorial_shown = False
+                    elif(event.type == MOUSEBUTTONDOWN and within_boundaries((x,y), show_spots, False)):
+                        hour_glass.stop()
+                        spots_shown = False                                                    
                     elif(event.type == MOUSEBUTTONDOWN or event.type == MOUSEBUTTONUP):
                         if(event.type == MOUSEBUTTONDOWN):
                             for i in range(0,2):
@@ -624,18 +648,14 @@ def run_game(level):
             
     elif level == 3:  
             level_ready = False
+            spots_shown = False
+            tutorial_shown = False
             # The main game loop
-            #
-            tutorials = 0
             while True:            
                 if(not level_ready):
                     cars = []
                     inactive_cars = []  
                     suspend_for_input = False
-                    if(tutorials < 2):
-                        spots_shown = False
-                        tutorial_shown = False
-                        tutorials += 1
                     counter = 0                 
                     background = pygame.image.load("bg_level"+str(level)+".png")
                     car0 = Car(screen,'darkSprite00.png',
@@ -647,6 +667,8 @@ def run_game(level):
                                                         (1,0), 500, 0, 0,(0,1))
                     cars.append(car1)
                     
+                    show_tutorial= Button(screen, 'Gen' , (0,0))
+                    show_spots = Button(screen, 'Gen', (0,show_tutorial.image_h))                    
                     target = Button(screen, 'Target', (550,360))
                     crash = Button(screen, 'Crash', (car0.pos.x + 50,395))
                     cop_spot = Button(screen, 'ShowSpot', (crash.pos.x + 20, crash.pos.y - 70))
@@ -664,6 +686,10 @@ def run_game(level):
                 #
                 time_passed = clock.tick(50)            
                 screen.blit(background, background.get_rect())
+                show_spots.blitme()
+                write_to_button("Show Spots", screen, 15, black,white,show_spots)
+                show_tutorial.blitme()
+                write_to_button("Show Tutorial", screen, 15, black, white, show_tutorial) 
                 buttonPanel.blitme()                
                 hour_glass.blitme()
                 reset.blitme()
@@ -714,6 +740,12 @@ def run_game(level):
                         elif(event.type == MOUSEBUTTONDOWN and within_boundaries((x,y), ret, False)):
                             #pygame.display.quit() shut down the working instance
                             intro_screen()
+                        elif(event.type == MOUSEBUTTONDOWN and within_boundaries((x,y), show_tutorial, False)):
+                            hour_glass.stop()
+                            tutorial_shown = False
+                        elif(event.type == MOUSEBUTTONDOWN and within_boundaries((x,y), show_spots, False)):
+                            hour_glass.stop()
+                            spots_shown = False                            
                         elif(event.type == MOUSEBUTTONDOWN or event.type == MOUSEBUTTONUP):
                             if(event.type == MOUSEBUTTONDOWN):
                                 for i in range(0,2):
