@@ -661,7 +661,7 @@ def run_game(level):
                     car0 = Car(screen,'darkSprite00.png',
                                     (450,425),
                                     (1,0), 500, 0, 0,(1,0))
-                    cars.append(car0)  
+                    cars.append(car0)                      
                     car1 = Car(screen,'bikerSprite00.png',
                                                         (525,500),
                                                         (1,0), 500, 0, 0,(0,1))
@@ -791,6 +791,8 @@ def run_game(level):
                             stats.blitme()
                             info = "Mass=" + str(car.mass) + "\n Velocity=" + str(round(car.speed,2))
                             write_to_button(info, screen, 15, (0,0,0), (255,255,255), stats)
+                            car.image = pygame.image.load('darkSpriteSelected00.png').convert_alpha()
+                            car.blitme()
                         
                 if(len(cars) > 1 and checkCrashes(cars[0], cars[1]) and not hour_glass.pause):
                     wreck = cars[0].crash(cars[1])
