@@ -516,8 +516,13 @@ def blit_cars(screen, counter, cars, inactive_cars, target, hour_glass, time_pas
                     stats.blitme()
                     info = "Mass=" + str(car.mass) + " kg\n Velocity=" + str(round(car.speed,2)) + " m/s"
                     write_to_button(info, screen, 15, (0,0,0), (255,255,255), stats)
-                    car.image = pygame.image.load('darkSpriteSelected00.png').convert_alpha()
-                    car.blitme()                         
+                    if(car.axes_mutable != (0,0)):
+                        d = '00'
+                        if(car.direction == vec2d(0,-1)): d = '01'
+                        elif(car.direction == vec2d(-1,0)): d = '10'
+                        elif(car.direction == vec2d(1,1)): d = '11'
+                        car.image = pygame.image.load("silverSprite" + d + ".png").convert_alpha()
+                        car.blitme()                         
                         
                         
                         
