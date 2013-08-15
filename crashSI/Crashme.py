@@ -502,7 +502,6 @@ def run_game(level):
             if(not level_ready):
                 cars = []
                 inactive_cars = []  
-                suspend_for_input = False
                 counter = Counter()              
                 background = pygame.image.load("bg_level"+str(level)+".png")
                 car0 = Car(screen,'brownSprite00.png',
@@ -602,7 +601,6 @@ def run_game(level):
                     carClicked = []
                     carClicked.append(False)
                     carClicked.append(False)
-                    crashPlayed = False
                     counter.level_ready = True    
                 
                 # Limit frame speed to 50 FPS
@@ -616,39 +614,35 @@ def run_game(level):
                     time_passed = 0;
                 draw_spots(counter, cop_spot, button_gen, crash, target)
                 x,y = mouse.get_pos()
-                handle_events(x, y, counter, buttons, cars, crash, carClicked, car_start_sound)                                      
-                                    
-                if(counter.spots_shown):               
-                    for car in cars:
-                            car.update(time_passed)
-                            car.blitme()
-                            if(car.speed < 0.05 and car.friction > 0): #friction > 0 implies car is a wreck
-                                if(within_boundaries(car.pos, target, False)):
-                                    win_report(screen, level, inactive_cars)
-                                    break
-                                elif(car.speed == 0):
-                                    lose_report(screen)
-                                    hour_glass.stop()
-                            if(within_boundaries((x,y), car, True)):
-                                stats = Button(screen, 'Gen', (car.pos.x+50, car.pos.y-50))
-                                stats.blitme()
-                                info = "Mass=" + str(car.mass) + "\n Velocity=" + str(round(car.speed,2))
-                                write_to_button(info, screen, 15, (0,0,0), (255,255,255), stats)
-                                car.image = pygame.image.load('darkSpriteSelected00.png').convert_alpha()
-                                car.blitme()       
-                if(len(cars) > 1 and checkCrashes(cars[0], cars[1]) and not hour_glass.pause):
-                    wreck = cars[0].crash(cars[1])
-                    inactive_cars.append(cars[0])
-                    inactive_cars.append(cars[1])
-                    crash_pos = wreck.pos
-                    if(not crashPlayed):
-                        crashPlayed = True
-                        crash_sound.play()
-                    cars = []
-                    cars.append(wreck)
+                handle_events(x, y, counter, buttons, cars, crash, carClicked, car_start_sound)
+                blit_cars(screen, counter, cars, inactive_cars, target, hour_glass, time_passed,x,y)
+                checkCrashes(cars, inactive_cars, hour_glass, crash_sound)  
                 pygame.display.flip()    
+                
+                
                   
-    
+def blit_cars(screen, counter, cars, inactive_cars, target, hour_glass, time_passed, x,y):
+    if(counter.spots_shown):               
+        for car in cars:
+                car.update(time_passed)
+                car.blitme()
+                if(car.speed < 0.05 and car.friction > 0): #friction > 0 implies car is a wreck
+                    if(within_boundaries(car.pos, target, False)):
+                        win_report(screen, level, inactive_cars)
+                        break
+                    elif(car.speed == 0):
+                        lose_report(screen)
+                        hour_glass.stop()  
+                if(within_boundaries((x,y), car, True)):
+                    stats = Button(screen, 'Gen', (car.pos.x+50, car.pos.y-50))
+                    stats.blitme()
+                    info = "Mass=" + str(car.mass) + "\n Velocity=" + str(round(car.speed,2))
+                    write_to_button(info, screen, 15, (0,0,0), (255,255,255), stats)
+                    car.image = pygame.image.load('darkSpriteSelected00.png').convert_alpha()
+                    car.blitme()                         
+                        
+                        
+                        
 
 def within_boundaries(c, obj, central_coordinates):
     if(not central_coordinates):
@@ -789,13 +783,27 @@ def exit_game():
     pygame.mixer.music.stop()
     sys.exit()
     
-def checkCrashes(car0, car1):
-    if(car0.pos.x - car0.image_w/4 < car1.pos.x + car1.image_w/4 
-           and car0.pos.x + car0.image_w/4 > car1.pos.x - car1.image_w/4 ):
-        if(car0.pos.y - car0.image_h/4 < car1.pos.y + car1.image_h/4 
-               and car0.pos.y + car0.image_w/4 > car1.pos.y - car1.image_w/4 ):
-            return True
+def checkCrashes(cars, inactive_cars, hour_glass, crash_sound):
+    crash = False
+    crashPlayed = False
+    if(cars[0].pos.x - cars[0].image_w/4 < cars[1].pos.x + cars[1].image_w/4 
+               and cars[0].pos.x + cars[0].image_w/4 > cars[1].pos.x - cars[1].image_w/4 ):
+            if(cars[0].pos.y - cars[0].image_h/4 < cars[1].pos.y + cars[1].image_h/4 
+                   and cars[0].pos.y + cars[0].image_w/4 > cars[1].pos.y - cars[1].image_w/4 ):
+                crash = True
+    if(len(cars) > 1 and crash and not hour_glass.pause):
+        wreck = cars[0].crash(cars[1])   
+        inactive_cars.append(cars[0])
+        inactive_cars.append(cars[1])
+        inactive_cars.append(wreck)
         
+        if(not crashPlayed):
+            crashPlayed = True
+            crash_sound.play()
+        cars = []
+        cars.append(wreck)    
+    
+    
 def handle_events(x, y, counter, buttons, cars, crash, carClicked, car_start_sound):
     
     clickPosx = x
@@ -847,7 +855,7 @@ def handle_events(x, y, counter, buttons, cars, crash, carClicked, car_start_sou
                         new_direction = vec2d(cars[i].pos.x - clickPosx, cars[i].pos.y - clickPosy).normalized()
                         new_speed = int(vec2d(cars[i].pos.x  - crash.pos.x + 30, cars[i].pos.y - crash.pos.y + 30).get_length() / 50) / 10 + 0.02
                         print(new_speed)
-                        cars[i].speed = new_speed                        
+                        cars[i].speed = new_speed  
 
 intro_screen()
 
