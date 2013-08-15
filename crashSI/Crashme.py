@@ -224,6 +224,7 @@ class Counter():
         self.spots_shown = False
         self.tutorial_shown = False  
         self.level_ready = False
+        self.carpos = []
     #------------------ PRIVATE PARTS ------------------#
     
     
@@ -361,16 +362,18 @@ def run_game(level):
         
     pause = True;  #level starts paused
     if level == 1:
-        counter = Counter()      
+        counter = Counter()         
+        counter.carpos.append((435,340))
+        counter.carpos.append((435,390))        
         # The main game loop
         #
         while True:            
             if(not counter.level_ready):
                 cars = []
-                inactive_cars = []  
-                car0 = Car(screen,'darkSprite00.png',(435,340), (0,-1), 1500, 0, 0)
+                inactive_cars = []
+                car0 = Car(screen,'darkSprite00.png',counter.carpos[0], (0,-1), 1500, 0, 0)
                 cars.append(car0)
-                car1 = Car(screen,'redSprite00.png', (435,390), (0,-1), 1500, 0, 0, (0,1))
+                car1 = Car(screen,'redSprite00.png',counter.carpos[1], (0,-1), 1500, 0, 0, (0,1))
                 cars.append(car1)  
                 crash_pos = vec2d(0,0)
                 
@@ -404,20 +407,21 @@ def run_game(level):
     
     elif level == 2:  
         counter = Counter()
+        counter.carpos.append((515,400))
+        counter.carpos.append((625,350))        
         # The main game loop
         #
         while True:            
             if(not counter.level_ready):
                 cars = []
-                inactive_cars = []  
+                inactive_cars = []
+                                
                 counter = Counter()              
                 background = pygame.image.load("bg_level"+str(level)+".png")
-                car0 = Car(screen,'brownSprite00.png',
-                                (515,400),
+                car0 = Car(screen,'brownSprite00.png',counter.carpos[0],
                                 (0,-1), 500, 0, 0,(0,1))
                 cars.append(car0)
-                car1 = Car(screen,'redSprite00.png',
-                                (625,350),
+                car1 = Car(screen,'redSprite00.png', counter.carpos[1],
                                 (-1,0), 500, 0, 0,(1,0))
                 cars.append(car1)  
                 
@@ -454,18 +458,18 @@ def run_game(level):
             
     elif level == 3:  
             counter = Counter()
+            counter.carpos.append((515,400))
+            counter.carpos.append((625,350))
             # The main game loop
             while True:            
                 if(not counter.level_ready):
                     cars = []
                     inactive_cars = []              
                     background = pygame.image.load("bg_level"+str(level)+".png")
-                    car0 = Car(screen,'darkSprite00.png',
-                                    (450,425),
+                    car0 = Car(screen,'darkSprite00.png',counter.carpos[0],
                                     (1,0), 500, 0, 0,(1,0))
                     cars.append(car0)                      
-                    car1 = Car(screen,'bikerSprite00.png',
-                                                        (525,500),
+                    car1 = Car(screen,'bikerSprite00.png',counter.carpos[1],
                                                         (1,0), 500, 0, 0,(0,1))
                     cars.append(car1)
                     show_tutorial= Button(screen, 'Gen' , (0,0))
@@ -733,8 +737,8 @@ def handle_events(x, y, counter, buttons, cars, crash, carClicked, car_start_sou
                         if(not cars[i].axes_mutable[1]):
                             pos_y = cars[i].pos.y
                         cars[i].pos = vec2d(pos_x,pos_y)
-                        new_direction = vec2d(cars[i].pos.x - clickPosx, cars[i].pos.y - clickPosy).normalized()
-                        new_speed = int(vec2d(cars[i].pos.x  - crash.pos.x + 30, cars[i].pos.y - crash.pos.y + 30).get_length() / 50) / 10 + 0.02
+                        new_direction = vec2d(cars[i].pos.x - counter.carpos[i][0], cars[i].pos.y - counter.carpos[i][1]).normalized()
+                        new_speed = int(vec2d(cars[i].pos.x  - counter.carpos[i][0], cars[i].pos.y - counter.carpos[i][1]).get_length() / 4) / 100
                         print(new_speed)
                         cars[i].speed = new_speed  
 
