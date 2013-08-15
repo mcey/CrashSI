@@ -8,6 +8,10 @@ from pygame import *
 from pygame.locals import *
 from vec2d import vec2d
 
+black = (0,0,0)
+white = (255,255,255)
+red = (255,0,0)
+
 
 class hourGlass(Sprite):
     """ An hourglass sprite; used to control pauses"""
@@ -54,9 +58,15 @@ class Button(Sprite):
         self.image = pygame.image.load(img_filename).convert_alpha()
         self.image_w, self.image_h = self.image.get_size()
         self.screen.blit(self.image, self.position)
+        self.text = ''
 
-    def blitme(self, str=''):
+    def blitme(self):
+        size = 15
+        while(len(self.text) * size/2 > self.image_w):
+            size -= 1
         self.screen.blit(self.image, self.pos)
+        if(self.text != ''):
+            write_to_button(self.text, self.screen, size, black, white, self)
         
         
 class Car(Sprite):
@@ -221,9 +231,6 @@ clock = pygame.time.Clock()
 played_levels = []
 won_levels = []
 
-black = (0,0,0)
-white = (255,255,255)
-red = (255,0,0)
 
 
 def intro_screen():
@@ -238,12 +245,16 @@ def intro_screen():
     button_score_bar = Button(screen, 'ScoreBar', (100,525))   
     write_to_button(("EXIT"), screen, 35, black, white,buttons[0])
     score_button = Button(screen, 'InfoScreen', (100,300))
-    write_to_button(("Current Rank: Rookie\nLevels Completed: " + str(len(won_levels))), screen, 20, black, white,score_button)
+    write_to_button(("Current Rank: Rookie\nLevels Completed: " + 
+                     str(len(won_levels))), screen, 20, black, 
+                    white,score_button)
     for i in range (1,13):
                 if(i in won_levels):
-                    write_to_button((str(i) +  " - completed!"), screen, 15, black, white,buttons[i])
+                    write_to_button((str(i) +  " - completed!"), screen, 15, 
+                                    black, white,buttons[i])
                 else:
-                    write_to_button(("Level " + str(i)), screen, 30, black, white,buttons[i])                    
+                    write_to_button(("Level " + str(i)), screen, 30, black, 
+                                    white,buttons[i])                    
     pygame.display.flip()
     
 
@@ -314,22 +325,32 @@ def level_intro_screen(level):
 def run_game(level):
     # Game parameters
     CAR_FILENAMES = [
-        'darkSprite00.png', 
-        'redSprite00.png']
+        'darkSprite00.png','redSprite00.png','blueSprite00.png',
+        'brownSprite00.png','silverSprite00.png', 'greenSprite00.png']
     CRASH_FILENAMES = [
         'crashSprite01.png',
         'crashSprite02.png']
     crash_sound = pygame.mixer.Sound('crash_sound.wav')
     car_start_sound = pygame.mixer.Sound('car_start.wav')
-
     
+    buttons = []
     buttonPanel = Button(screen, 'MidPanel', (5, 400))
+    buttons.append(buttonPanel)
     hour_glass = hourGlass(screen, 'hourGlassDown.png',
                                (buttonPanel.pos.x + 85, buttonPanel.pos.y + 20))
+    buttons.append(hour_glass)
     reset = Button(screen, 'Reset',
                            (buttonPanel.pos.x + 15, buttonPanel.pos.y + 20))
+    buttons.append(reset)
     ret = Button(screen, 'Return',
                             (buttonPanel.pos.x + 15, buttonPanel.pos.y + 85))
+    buttons.append(ret)
+    show_tutorial= Button(screen, 'Gen' , (0,0))
+    show_tutorial.text = "Show Instructions"
+    buttons.append(show_tutorial)
+    show_spots = Button(screen, 'Gen', (0,show_tutorial.image_h)) 
+    show_spots.text = "Show Spots"
+    buttons.append(show_spots)
     arrow = Button(screen, 'Arrow', (50,50))
         
     pause = True;  #level starts paused
@@ -343,7 +364,6 @@ def run_game(level):
             if(not level_ready):
                 cars = []
                 inactive_cars = []  
-                suspend_for_input = False
                 counter = 0                 
                 background = pygame.image.load("bg_level"+str(level)+".png")
                 car0 = Car(screen,'darkSprite00.png',
@@ -357,14 +377,11 @@ def run_game(level):
                 car0.direction.rotate(-90)
                 car1.direction.rotate(-90)
                 crash_pos = vec2d(0,0)
-        
-                show_tutorial= Button(screen, 'Gen' , (0,0))
-                show_spots = Button(screen, 'Gen', (0,show_tutorial.image_h))         
+                
                 target = Button(screen, 'Target', (410,100))
                 crash = Button(screen, 'Crash', (405,310))
                 cop_spot = Button(screen, 'ShowSpot', (420, 250))
-                button_gen = Button(screen, 'Gen', (280, 390))
-                
+                button_gen = Button(screen, 'Gen', (280, 390))                
                 
                 i = 0
                 carClicked = False
@@ -375,15 +392,7 @@ def run_game(level):
             #
             time_passed = clock.tick(50)            
             screen.blit(background, background.get_rect())
-            buttonPanel.blitme()                
-            hour_glass.blitme()             
-            reset.blitme()
-            ret.blitme()
-            target.blitme()
-            show_spots.blitme()
-            write_to_button("Show Instructions", screen, 14, black,white,show_spots)
-            show_tutorial.blitme()
-            write_to_button("Show Tutorial", screen, 15, black, white, show_tutorial)             
+            draw_buttons(screen, buttons)
             if(hour_glass.pause):
                 time_passed = 0;
             if(not spots_shown):     #Show the crash and final positions
@@ -455,8 +464,7 @@ def run_game(level):
             for car in cars:
                 if(spots_shown):
                     car.update(time_passed)
-                    if(spots_shown):
-                        car.blitme()
+                    car.blitme()
                     if(car.speed < 0.05 and car.friction > 0): #friction > 0 implies car is a wreck
                         if(within_boundaries(car.pos, target, False)):
                             win_report(screen, level, inactive_cars)
@@ -529,16 +537,7 @@ def run_game(level):
             #
             time_passed = clock.tick(50)            
             screen.blit(background, background.get_rect())
-            buttonPanel.blitme()                
-            hour_glass.blitme()
-            reset.blitme()
-            ret.blitme()
-            target.blitme()
-            crash.blitme()
-            show_spots.blitme()
-            write_to_button("Show Instructions", screen, 14, black,white,show_spots)
-            show_tutorial.blitme()
-            write_to_button("Show Tutorial", screen, 15, black, white, show_tutorial)             
+            draw_buttons(screen, buttons)             
             if(hour_glass.pause):
                 time_passed = 0;
             if(not spots_shown):     #Show the crash and final positions
@@ -688,14 +687,7 @@ def run_game(level):
                 #
                 time_passed = clock.tick(50)            
                 screen.blit(background, background.get_rect())
-                show_spots.blitme()
-                write_to_button("Show Instructions", screen, 14, black,white,show_spots)
-                show_tutorial.blitme()
-                write_to_button("Show Tutorial", screen, 15, black, white, show_tutorial) 
-                buttonPanel.blitme()                
-                hour_glass.blitme()
-                reset.blitme()
-                ret.blitme()
+                draw_buttons(screen, buttons)
                 target.blitme()
                 crash.blitme()
                 if(hour_glass.pause):
@@ -904,7 +896,11 @@ def adjust_for_crash(cars, crash_spot):
             shortest = time
     displacement = ((longest - shortest) * cars[index].speed) * cars[index].direction
     cars[index].pos += displacement
-            
+
+def draw_buttons(screen, buttons):
+    for button in buttons:
+        button.blitme()
+        
 def LCM(x,y):
     temp = x
     while temp%y != 0:
