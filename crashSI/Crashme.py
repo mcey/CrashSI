@@ -204,7 +204,6 @@ class Car(Sprite):
             self.direction.x * self.speed * time_passed,
             self.direction.y * self.speed * time_passed)       
         self.pos += displacement
-        #print(self.speed)
         
         # When the image is rotated, its size is changed.
         # We must take the size into account for detecting 
@@ -325,7 +324,7 @@ def intro_screen():
     else: rank = "Veteran"
     text = ("Current Rank: "+rank+"\nLevels Completed: " + 
                      str(len(won_levels)))+"/10"
-    if(len(won_levels) < 10):
+    if(len(won_levels) == 10):
         text += "\nYou sir, are either lucky\n"
         "Or crafty: in either case you've beaten me."
     write_to_button(text, screen, 20, black, 
@@ -1101,7 +1100,6 @@ def adjust_for_crash(cars, crash_spot):
             distance = cars[i].pos - vec2d(crash_spot.pos.x + crash_spot.image_w / 2, 
                                            crash_spot.pos.y + crash_spot.image_h / 2)
             time = int(distance.get_length() / cars[i].speed)
-            print(distance.get_length())
             if(time > longest):
                 longest = time
                 index = i            
@@ -1265,7 +1263,6 @@ def handle_events(x, y, counter, buttons, cars, crash, carClicked, car_start_sou
                                                   
                         new_direction = vec2d(cars[i].pos.x - counter.carpos[i][0], cars[i].pos.y - counter.carpos[i][1]).normalized()
                         new_speed = int(vec2d(cars[i].pos.x  - counter.carpos[i][0], cars[i].pos.y - counter.carpos[i][1]).get_length() / 4) / 100
-                        print(new_speed)
                         cars[i].speed = new_speed 
 
 logo_screen()
