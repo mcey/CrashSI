@@ -193,16 +193,16 @@ class Car(Sprite):
         # of self.direction (which is normalized to not affect
         # the magnitude of the displacement)
         #
-        if(self.friction > 0 and self.speed > 0.0):
+        if(self.friction > 0 and self.speed > 0.0):          
             deceleration = self.mass * self.friction * 0.01
-            self.speed = self.speed - (deceleration * time_passed)
+            self.speed = self.speed - (deceleration * time_passed)             
         if(self.speed < 0):
             self.speed = 0
         displacement = vec2d(    
             self.direction.x * self.speed * time_passed,
             self.direction.y * self.speed * time_passed)       
         self.pos += displacement
-        
+        #print(self.speed)
         
         # When the image is rotated, its size is changed.
         # We must take the size into account for detecting 
@@ -212,18 +212,10 @@ class Car(Sprite):
         bounds_rect = self.screen.get_rect().inflate(
                         -self.image_w, -self.image_h)
         
-        if self.pos.x < bounds_rect.left:
-            self.pos.x = bounds_rect.left
-            self.direction.x *= -1
-        elif self.pos.x > bounds_rect.right:
-            self.pos.x = bounds_rect.right
-            self.direction.x *= -1
-        elif self.pos.y < bounds_rect.top:
-            self.pos.y = bounds_rect.top
-            self.direction.y *= -1
-        elif self.pos.y > bounds_rect.bottom:
-            self.pos.y = bounds_rect.bottom
-            self.direction.y *= -1
+        if (self.pos.x < bounds_rect.left - 50 or self.pos.x > bounds_rect.right):
+            if (self.pos.y < bounds_rect.top or self.pos.y > bounds_rect.bottom):
+                self.speed = 0
+                self.friction = 10
     
     def printable(self):#prints a surface with the car's picture and stats    
         font = pygame.font.SysFont("buxton sketch", 14)
@@ -235,7 +227,7 @@ class Car(Sprite):
             text += " at a stop;"
         else:
             text += " going " + str(round(self.speed,2) * 50) + "m/s;"
-        text += " had a mass of " +str(self.mass)
+        text += " had a mass of " +str(self.mass) + " kg"
         alt_text = "had a momentum of " + str(round(self.speed * self.mass, 2)) + " kg.m/s"
         surface.blit(font.render(text, True, black),(35,0))
         surface.blit(font.render(alt_text, True, black),(35,14))
@@ -547,7 +539,7 @@ def run_game(level):
                         target = Button(screen, 'Target', (300,260))
                         crash = Button(screen, 'Crash', (360,260))
                         cop_spot = Button(screen, 'ShowSpot', (crash.pos.x + 20, crash.pos.y - 70))
-                        button_gen = Button(screen, 'Gen', (400, 300)) #
+                        button_gen = Button(screen, 'Gen', (400, 340)) #
                                             
                         i = 0
                         carClicked = []
@@ -581,10 +573,10 @@ def run_game(level):
                                           
                 background = pygame.image.load("bg_level"+str(level)+".png")
                 car0 = Car(screen,'brownSprite00.png',counter.carpos[0],
-                                (0,-1), 500, 0, 0,(0,1))
+                                (0,-1), 1350, 0, 0,(0,1))
                 cars.append(car0)
                 car1 = Car(screen,'redSprite00.png', counter.carpos[1],
-                                (-1,0), 500, 0, 0,(1,0))
+                                (-1,0), 1700, 0, 0,(1,0))
                 cars.append(car1)  
                 
                 original_pos = car1.pos
@@ -629,7 +621,7 @@ def run_game(level):
                 inactive_cars = []              
                 background = pygame.image.load("bg_level"+str(level)+".png")
                 car0 = Car(screen,'darkSprite00.png',counter.carpos[0],
-                                (1,0), 500, 0, 0,(-1,0))
+                                (1,0), 900, 0, 0,(-1,0))
                 cars.append(car0)                      
                 car1 = Car(screen,'bikerSprite00.png',counter.carpos[1],
                                                     (0,-1), 80, 0, 0,(0,1))
@@ -649,7 +641,7 @@ def run_game(level):
             
             # Limit frame speed to 50 FPS
             #
-            time_passed = clock.tick(50)            
+            time_passed = clock.tick(50)
             screen.blit(background, background.get_rect())
             draw_buttons(screen, buttons)
             target.blitme()
@@ -953,7 +945,17 @@ def blit_cars(screen, counter, cars, inactive_cars, target, hour_glass, time_pas
                         lose_report(screen)
                         hour_glass.stop()  
                 if(within_boundaries((x,y), car, True)):
-                    stats = Button(screen, 'Gen', (car.pos.x+50, car.pos.y-50))
+                    fits = True
+                    new_x = car.pos.x+50
+                    new_y = car.pos.y-50 
+                    if(new_x + 114 > 800):
+                        new_x = car.pos.x - 175
+                        fits = False
+                    if(new_y + 66 > 600):
+                        new_y = car.pos.y - 100
+                        fits = False                    
+                    stats = Button(screen, 'Gen', (new_x, new_y))
+                    
                     stats.blitme()
                     info = "Mass=" + str(car.mass) + " kg\n Velocity=" + str(round(car.speed * 50,2)) + " m/s"
                     write_to_button(info, screen, 15, (0,0,0), (255,255,255), stats)
@@ -979,7 +981,7 @@ def blit_cars(screen, counter, cars, inactive_cars, target, hour_glass, time_pas
                             left = pygame.image.load("silverSprite" + '10.png').convert_alpha()
                             car.image = transform.rotate(left, 10)                         
                         if(car.mass < 100):
-                            car.image = pygame.image.load("bikerSpriteSelected" + d + ".png").convert_alpha()
+                            car.image = pygame.image.load("bikerSpriteSelected01.png").convert_alpha()
                         car.blitme()                         
                         
                         
@@ -1014,8 +1016,19 @@ def write_to_button(str, screen, size, color, bg, button, centered = True):
             pos_y += size + 5
             
 def win_report(screen, level, inactive_cars):
+    reports = []
+    reports.append("\"What do you know, it was stopping.\"")
+    reports.append("")
     win_button = Button(screen, 'InfoScreen', (300,250))
-    win_button.blitme()
+    win_button.blitme()    
+    if(reports[level - 1] != ""):
+        font = pygame.font.SysFont("buxton sketch", 15)        
+        cop = image.load('cop.png').convert_alpha()
+        surface = pygame.surface.Surface((250,50),pygame.SRCALPHA, 32)        
+        surface.blit(cop, (0,0))
+        surface.blit(font.render(reports[level-1], True, black),(40,15))
+        screen.blit(surface, (win_button.pos.x + 20, win_button.pos.y + 120))        
+    
     write_to_button("SUCCESS!..", screen, 20, black, white, win_button, False)
     screen.blit(inactive_cars[0].printable(), (win_button.pos.x + 20, win_button.pos.y + 40))
     screen.blit(inactive_cars[1].printable(), (win_button.pos.x + 20, win_button.pos.y + 80))
@@ -1160,7 +1173,9 @@ def checkCrashes(cars, inactive_cars, hour_glass, crash_sound, elastic = False, 
                 cars.pop()
                 cars.append(wreck)
             else: #elastic "bump"
-                if(cars[0].speed > 0.05 and cars[1].speed > 0.05):
+                if(cars[0].speed > 0.02 and cars[1].speed > 0.02):
+                    cars[0].bump(cars[1], secondary)
+                elif(cars[1]. mass < 100):
                     cars[0].bump(cars[1], secondary)
                 else:
                     crashPlayed = True
