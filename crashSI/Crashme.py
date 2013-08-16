@@ -276,6 +276,39 @@ played_levels = []
 won_levels = []
 
 
+def logo_screen():
+    bg = pygame.image.load('csi.png')
+    screen.blit(bg,bg.get_rect());
+    pygame.display.flip()
+    time.delay(1200)
+    bg = pygame.image.load('opening_monologue.png')    
+    screen.blit(bg,bg.get_rect()); 
+    pos = []
+    pos.append(150)
+    pos.append(200)
+    
+    write_monologue("After acquiring your degree in applied mathematics\n"
+                    "you become.... an insurance salesman.                  \n"
+                    "No, not really; but you work for an insurance company,\n"
+                    "spending your days checking claims.         \n"
+                    "So when an opportunity comes up with the local police force\n"
+                    "you inevitably take it."
+                    ,screen, 25, white, black, pos)
+    
+    continue_button = Button(screen, 'Gen', (324,490))
+    continue_button.text = "Continue"
+    continue_button.blitme()   
+    pygame.display.flip()
+    while True:
+        clock.tick(50)
+        x,y = mouse.get_pos()
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                exit_game()
+            elif(event.type == MOUSEBUTTONDOWN):
+                if(within_boundaries((x,y), continue_button, False)):
+                    intro_screen()    
+    
 
 def intro_screen():
     #Level selection etc
@@ -318,7 +351,7 @@ def intro_screen():
             if event.type == pygame.QUIT:
                 exit_game()
             elif(event.type == MOUSEBUTTONDOWN):
-                for i in range(1,13):
+                for i in range(1,11):
                     if(within_boundaries((x,y),buttons[i],False)):
                         pygame.mixer.music.stop()
                         if(i not in played_levels):
@@ -995,6 +1028,9 @@ def lose_report(screen):
                     "Hit Reset to try again.\n"
                     "Hit Return to quit.", screen, 25, black, white, lose_button, False)      
 def write_monologue(str, screen, size, color, bg, pos):    
+    font = pygame.font.SysFont("buxton sketch", 12)
+    escape = font.render("Hit ESC to skip", True, color, bg)
+    screen.blit(escape,(720,430)) 
     font = pygame.font.SysFont("buxton sketch", 25)
     sequence = list(str)
     pos_x = pos[0]
@@ -1200,5 +1236,5 @@ def handle_events(x, y, counter, buttons, cars, crash, carClicked, car_start_sou
                         print(new_speed)
                         cars[i].speed = new_speed 
 
-intro_screen()
+logo_screen()
 
