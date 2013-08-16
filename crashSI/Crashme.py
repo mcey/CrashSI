@@ -102,6 +102,7 @@ class Car(Sprite):
         self.base_image = pygame.image.load(self.imgFileName).convert_alpha()
         self.image = self.base_image
         self.image_w, self.image_h = self.image.get_size()
+        self.bumped = False        
         
         # A vector specifying the car's position on the screen
         #
@@ -150,6 +151,7 @@ class Car(Sprite):
             other.friction = fric
         else:
             other.friction = 0.0006
+        self.bumped = True
         
     def clone(self):
         new_car = Car(self.screen, self.imgFileName, self.pos, self.direction, self.mass, self.speed, self.friction, self.axes_mutable)
@@ -178,7 +180,7 @@ class Car(Sprite):
             self.image = pygame.image.load(self.imgFileName[:-6] + '11.png').convert_alpha()
         elif(self.direction.get_angle() == -45):#heading right and up
             right = pygame.image.load(self.imgFileName[:-6] + '01.png').convert_alpha()
-            self.image = transform.rotate(right, 10)
+            self.image = transform.rotate(right, -10)
         elif(self.direction.get_angle() == -135):#heading left and up
             left = pygame.image.load(self.imgFileName[:-6] + '01.png').convert_alpha()
             self.image = transform.rotate(left, 10)        
@@ -186,8 +188,8 @@ class Car(Sprite):
             right = pygame.image.load(self.imgFileName[:-6] + '11.png').convert_alpha()
             self.image = transform.rotate(right, 10)     
         elif(self.direction.get_angle() == 135):#heading left and down
-            left = pygame.image.load(self.imgFileName[:-6] + '10.png').convert_alpha()
-            self.image = transform.rotate(left, 10)   
+            left = pygame.image.load(self.imgFileName[:-6] + '11.png').convert_alpha()
+            self.image = transform.rotate(left, -10)   
         # Compute and apply the displacement to the position 
         # vector. The displacement is a vector, having the angle
         # of self.direction (which is normalized to not affect
@@ -319,10 +321,14 @@ def intro_screen():
     rank = ''
     if(len(won_levels) < 3): rank = "Rookie"
     elif(len(won_levels) < 6): rank = "Amateur"
-    elif(len(on_levels) < 9): rank = "Nerd"
+    elif(len(on_levels) < 9): rank = "Aspirant"
     else: rank = "Veteran"
-    write_to_button(("Current Rank: "+rank+"\nLevels Completed: " + 
-                     str(len(won_levels)))+"/10", screen, 20, black, 
+    text = ("Current Rank: "+rank+"\nLevels Completed: " + 
+                     str(len(won_levels)))+"/10"
+    if(len(won_levels) < 10):
+        text += "\nYou sir, are either lucky\n"
+        "Or crafty: in either case you've beaten me."
+    write_to_button(text, screen, 20, black, 
                     white,score_button)
     for i in range (1,11):
                 if(i in won_levels):
@@ -620,7 +626,7 @@ def run_game(level):
                 cars = []
                 inactive_cars = []              
                 background = pygame.image.load("bg_level"+str(level)+".png")
-                car0 = Car(screen,'darkSprite00.png',counter.carpos[0],
+                car0 = Car(screen,'brownSprite00.png',counter.carpos[0],
                                 (1,0), 900, 0, 0,(-1,0))
                 cars.append(car0)                      
                 car1 = Car(screen,'bikerSprite00.png',counter.carpos[1],
@@ -658,7 +664,7 @@ def run_game(level):
     elif level == 5: 
         counter = Counter()
         counter.carpos.append((200,250))
-        counter.carpos.append((225,400))
+        counter.carpos.append((275,350))
         # The main game loop
         while True:            
             if(not counter.level_ready):
@@ -709,7 +715,7 @@ def run_game(level):
                     car0 = Car(screen,'rustySprite00.png',counter.carpos[0],
                                     (0,-1), 1300, 0, 0,(0,1))
                     cars.append(car0)                      
-                    car1 = Car(screen,'blueSprite00.png',counter.carpos[1],
+                    car1 = Car(screen,'redSprite00.png',counter.carpos[1],
                                                         (1,-1), 1400, 0, 0,(-1,1))
                     cars.append(car1)
                     show_tutorial= Button(screen, 'Gen' , (0,0))
@@ -718,7 +724,7 @@ def run_game(level):
                     target = Button(screen, 'Target', (325,120))
                     crash = Button(screen, 'Crash', (300,250))
                     cop_spot = Button(screen, 'ShowSpot', (crash.pos.x + 20, crash.pos.y - 70))
-                    button_gen = Button(screen, 'Gen', (280, 390)) #
+                    button_gen = Button(screen, 'Gen', (280, 420)) 
                                         
                     i = 0
                     carClicked = []
@@ -800,7 +806,7 @@ def run_game(level):
                 cars = []
                 inactive_cars = []              
                 background = pygame.image.load("bg_level"+str(level)+".png")
-                car0 = Car(screen,'redSprite00.png',counter.carpos[0],
+                car0 = Car(screen,'greenSprite00.png',counter.carpos[0],
                                 (-1,0), 1900, 0, 0,(1,0))
                 cars.append(car0)                      
                 car1 = Car(screen,'blueSprite00.png',counter.carpos[1],
@@ -970,7 +976,7 @@ def blit_cars(screen, counter, cars, inactive_cars, target, hour_glass, time_pas
                             car.image = pygame.image.load("silverSprite11.png").convert_alpha()
                         if(car.direction.get_angle() == -45):#heading right and up
                             right = pygame.image.load("silverSprite" + '01.png').convert_alpha()
-                            car.image = transform.rotate(right, 10)
+                            car.image = transform.rotate(right, -10)
                         elif(car.direction.get_angle() == -135):#heading left and up
                             left = pygame.image.load("silverSprite" + '01.png').convert_alpha()
                             car.image = transform.rotate(left, 10)        
@@ -978,8 +984,8 @@ def blit_cars(screen, counter, cars, inactive_cars, target, hour_glass, time_pas
                             right = pygame.image.load("silverSprite" + '11.png').convert_alpha()
                             car.image = transform.rotate(right, 10)     
                         elif(car.direction.get_angle() == 135):#heading left and down
-                            left = pygame.image.load("silverSprite" + '10.png').convert_alpha()
-                            car.image = transform.rotate(left, 10)                         
+                            left = pygame.image.load("silverSprite" + '11.png').convert_alpha()
+                            car.image = transform.rotate(left, -10)                         
                         if(car.mass < 100):
                             car.image = pygame.image.load("bikerSpriteSelected01.png").convert_alpha()
                         car.blitme()                         
@@ -1018,7 +1024,15 @@ def write_to_button(str, screen, size, color, bg, button, centered = True):
 def win_report(screen, level, inactive_cars):
     reports = []
     reports.append("\"What do you know, it was stopping.\"")
-    reports.append("")
+    reports.append("\"Weird\"")
+    reports.append("\"Ouch.\"")
+    reports.append("\"She sure did jump out.\"")
+    reports.append("\"That was reckless.\"")
+    reports.append("\"Kids.\"")
+    reports.append("\"It's a blind spot alright.\"")
+    reports.append("\"Turns out it's sunglare from building south.\"")
+    reports.append("\"At least they found eachother, unhurt.\"")
+    reports.append("\"We found a license-plate, marks them here.\"")
     win_button = Button(screen, 'InfoScreen', (300,250))
     win_button.blitme()    
     if(reports[level - 1] != ""):
@@ -1117,7 +1131,7 @@ def draw_spots(counter, cop_spot, button_gen, crash, target, target2 = ''):
             write_to_button("        Another wreck"
                             "\n          was found here", screen, 15, black, white, cop_spot, False)            
         counter.count  += 1
-        if(counter.count  > 225):
+        if(counter.count  > 225 or (target2 == '' and counter.count > 150)):
             counter.spots_shown = True
             counter.count  = 0
             cop_spot.pos = vec2d(crash.pos.x + 20, crash.pos.y - 70)
@@ -1173,10 +1187,13 @@ def checkCrashes(cars, inactive_cars, hour_glass, crash_sound, elastic = False, 
                 cars.pop()
                 cars.append(wreck)
             else: #elastic "bump"
-                if(cars[0].speed > 0.02 and cars[1].speed > 0.02):
-                    cars[0].bump(cars[1], secondary)
-                elif(cars[1]. mass < 100):
-                    cars[0].bump(cars[1], secondary)
+                if(not cars[0].bumped):
+                    if(cars[0].speed > 0.02 and cars[1].speed > 0.02):
+                        cars[0].bump(cars[1], secondary)
+                    elif(cars[1]. mass < 100):
+                        cars[0].bump(cars[1], secondary)
+                    else:
+                        crashPlayed = True
                 else:
                     crashPlayed = True
             if(not crashPlayed):
