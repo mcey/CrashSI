@@ -99,7 +99,7 @@ class Car(Sprite):
         self.axes_mutable = axes_mutable
         self.imgFileName = img_filename
         # base_image holds the original image
-        self.base_image = pygame.image.load(img_filename).convert_alpha()
+        self.base_image = pygame.image.load(self.imgFileName).convert_alpha()
         self.image = self.base_image
         self.image_w, self.image_h = self.image.get_size()
         
@@ -134,6 +134,11 @@ class Car(Sprite):
         if(distance.get_length() == 0):
             self.speed = 0  
             self.friction = 0
+        else:
+            if(self.mass > 100):
+                self.imgFileName = 'damagedSprite00.png'
+            else:
+                self.imgFileName = 'bikerSpriteCrash00.png'
         remainder = total_mom - (self.direction * self.speed * self.mass)
         other.direction = remainder.normalized()
         other.speed = remainder.get_length() / other.mass 
@@ -320,7 +325,7 @@ def level_intro_screen(level):
     dialogue.append("Now son, don't get cocky.\nMy expert opinion here is that "
     "we have two speeders.\nBut one guy says he was stopped at the sign all "
     "proper.\n\nNow I say one moving car hitting a stationary car is not\nenough"
-    " for their wreckage to drift so far.\nUse your fancy science son, prove me wrong...") 
+    " for their wreckage to drift so far.\nUse your fancy science son, prove me wrong...")       
     dialogue.append("We have a head-on collision on a major road.\n"
                     "Either both drivers fell asleep on the wheel,\n"
                     "or they were playing a game of chicken.\n\n"
@@ -344,6 +349,13 @@ def level_intro_screen(level):
                     "I see clearly what transpired here, but department wants \n"
                     "your \"approval\" now that you have a few cases \nunder your belt.\n\n"
                     "You're starting to make a name for yourself...")
+    dialogue.append("Some local kids snatched their fathers' carkeys, \n"
+                    "and ended up in a parking lot.\n"
+                    "From the tire-marks, looks like they tryied their hand \n"
+                    "in drag racing.\n"
+                    "Nothing like a few movies to get youngsters worked up.\n\n"
+                    "Figure this mess out for me, time to set examples.")
+    
     lines  = dialogue[level-1]
     pos = vec2d(250,170)
     
@@ -440,7 +452,8 @@ def run_game(level):
             blit_cars(screen, counter, cars, inactive_cars, target, hour_glass, time_passed,x,y,level)
             checkCrashes(cars, inactive_cars, hour_glass, crash_sound)  
             pygame.display.flip()
-            
+    
+    
     elif level == 2:  
                 counter = Counter()
                 counter.carpos.append((325,275))
@@ -617,7 +630,52 @@ def run_game(level):
             checkCrashes(cars, inactive_cars, hour_glass, crash_sound)              
             blit_cars(screen, counter, cars, inactive_cars, target, hour_glass, time_passed,x,y,level)
             draw_buttons(screen, buttons)            
-            pygame.display.flip()                                              
+            pygame.display.flip()
+            
+    elif level == 6:  
+            counter = Counter()
+            counter.carpos.append((300,100))
+            counter.carpos.append((600,100))
+            # The main game loop
+            while True:            
+                if(not counter.level_ready):
+                    cars = []
+                    inactive_cars = []              
+                    background = pygame.image.load("bg_level"+str(level)+".png")
+                    car0 = Car(screen,'rustySprite00.png',counter.carpos[0],
+                                    (1,1), 1800, 0, 0,(-1,-1))
+                    cars.append(car0)                      
+                    car1 = Car(screen,'blueSprite00.png',counter.carpos[1],
+                                                        (-1,1), 2000, 0, 0,(1,-1))
+                    cars.append(car1)
+                    show_tutorial= Button(screen, 'Gen' , (0,0))
+                    show_spots = Button(screen, 'Gen', (0,show_tutorial.image_h))                    
+                    target = Button(screen, 'Target', (550,340))
+                    crash = Button(screen, 'Crash', (400,150))
+                    cop_spot = Button(screen, 'ShowSpot', (crash.pos.x + 20, crash.pos.y - 70))
+                    button_gen = Button(screen, 'Gen', (280, 390)) #
+                                        
+                    i = 0
+                    carClicked = []
+                    carClicked.append(False)
+                    carClicked.append(False)
+                    counter.level_ready = True    
+                
+                # Limit frame speed to 50 FPS
+                #
+                time_passed = clock.tick(50)            
+                screen.blit(background, background.get_rect())
+                draw_buttons(screen, buttons)
+                target.blitme()
+                crash.blitme()
+                if(hour_glass.pause):
+                    time_passed = 0;
+                draw_spots(counter, cop_spot, button_gen, crash, target)
+                x,y = mouse.get_pos()
+                handle_events(x, y, counter, buttons, cars, crash, carClicked, car_start_sound)
+                blit_cars(screen, counter, cars, inactive_cars, target, hour_glass, time_passed,x,y,level)
+                checkCrashes(cars, inactive_cars, hour_glass, crash_sound, True, cars[0].pos)  
+                pygame.display.flip()            
                   
 def blit_cars(screen, counter, cars, inactive_cars, target, hour_glass, time_passed, x,y, level):
     if(counter.spots_shown):               
@@ -643,6 +701,8 @@ def blit_cars(screen, counter, cars, inactive_cars, target, hour_glass, time_pas
                         elif(car.direction == vec2d(-1,0)): d = '10'
                         elif(car.direction == vec2d(1,1)): d = '11'
                         car.image = pygame.image.load("silverSprite" + d + ".png").convert_alpha()
+                        if(car.mass < 100):
+                            car.image = pygame.image.load("bikerSpriteSelected" + d + ".png").convert_alpha()
                         car.blitme()                         
                         
                         
@@ -832,7 +892,7 @@ def handle_events(x, y, counter, buttons, cars, crash, carClicked, car_start_sou
             elif(event.type == MOUSEBUTTONDOWN and within_boundaries((x,y), buttons[1], False)): #hour_glass
                 buttons[1].update()
                 buttons[1].blitme()
-                if(cars[0].axes_mutable != (0,0) and cars[1].axes_mutable != (0,0)):
+                if(cars[0].speed != 0 and cars[1].speed != 0):
                     adjust_for_crash(cars, crash)
             elif(event.type == MOUSEBUTTONDOWN and within_boundaries((x,y), buttons[2], False)): #reset
                 counter.level_ready = False
@@ -871,7 +931,7 @@ def handle_events(x, y, counter, buttons, cars, crash, carClicked, car_start_sou
                         if((y > counter.carpos[i][1] and cars[i].axes_mutable[1] == 1) or (y < counter.carpos[i][1] and cars[i].axes_mutable[1] == -1)):
                             pos_y = y
                         if(cars[i].axes_mutable[0] != 0 and cars[i].axes_mutable[1] != 0):
-                            dif = vec2d(x,y) - cars[i].pos
+                            dif = vec2d(pos_x,pos_y) - cars[i].pos
                             if(cars[i].axes_mutable == (1,-1)):
                                 cars[i].pos += dif.projection(vec2d(1,-1))
                             elif(cars[i].axes_mutable == (-1,-1)):
