@@ -123,7 +123,26 @@ class Car(Sprite):
         wreck = Car(self.screen, 'crashSprite01.png', (wreck_x, wreck_y),
                     wreck_direction, wreck_mass, wreck_speed, 0.000006)
         return wreck
-
+    
+    def bump(self, other, spot, fric = 0.000006):
+        total_mom = (self.direction * self.speed * self.mass) + (other.direction * other.speed * other.mass)
+        distance = vec2d(spot) - self.pos
+        self.friction = fric
+        time = 3000 #ms
+        self.direction = self.direction.normalized()
+        self.speed = (distance / time) + (0.5 * self.friction * time)
+        if(distance.get_length() == 0):
+            self.speed = 0  
+            self.friction = 0
+        remainder = total_mom - (self.direction * self.speed * self.mass)
+        other.direction = remainder.normalized()
+        other.speed = remainder.get_length() / other.mass 
+        other.friction = 0.0006
+        
+    def clone(self):
+        new_car = Car(self.screen, self.imgFileName, self.pos, self.direction, self.mass, self.speed, self.friction, self.axes_mutable)
+        return new_car
+        
 
                
     def update(self, time_passed):
@@ -139,11 +158,11 @@ class Car(Sprite):
         # work correctly.
         if(self.direction == vec2d(1,0)):#heading right
             self.image = pygame.image.load(self.imgFileName[:-6] + '00.png').convert_alpha() 
-        elif(self.direction == vec2d(0,1)):#heading up
+        elif(self.direction == vec2d(0,-1)):#heading up
             self.image = pygame.image.load(self.imgFileName[:-6] + '01.png').convert_alpha() 
         elif(self.direction == vec2d(-1,0)):#heading left
             self.image = pygame.image.load(self.imgFileName[:-6] + '10.png').convert_alpha()
-        elif(self.direction == vec2d(0 ,1)):#heading down
+        elif(self.direction == vec2d(0,1)):#heading down
             self.image = pygame.image.load(self.imgFileName[:-6] + '11.png').convert_alpha()
         elif(self.direction.get_angle() == -45):#heading right and up
             right = pygame.image.load(self.imgFileName[:-6] + '01.png').convert_alpha()
@@ -389,7 +408,7 @@ def run_game(level):
             if(not counter.level_ready):
                 cars = []
                 inactive_cars = []
-                car0 = Car(screen,'darkSprite00.png',counter.carpos[0], (0,-1), 1000, 0, 0, (0,0))
+                car0 = Car(screen,'darkSprite00.png',counter.carpos[0], (0,-1), 600, 0, 0, (0,0))
                 cars.append(car0)
                 car1 = Car(screen,'redSprite00.png',counter.carpos[1], (0,-1), 1000, 0, 0, (0,1))
                 cars.append(car1)  
@@ -532,7 +551,7 @@ def run_game(level):
                 cars.append(car1)
                 show_tutorial= Button(screen, 'Gen' , (0,0))
                 show_spots = Button(screen, 'Gen', (0,show_tutorial.image_h))                    
-                target = Button(screen, 'Target', (550,320))
+                target = Button(screen, 'Target', (550,340))
                 crash = Button(screen, 'Crash', (car0.pos.x + 50,395))
                 cop_spot = Button(screen, 'ShowSpot', (crash.pos.x + 20, crash.pos.y - 70))
                 button_gen = Button(screen, 'Gen', (280, 390)) #
@@ -556,7 +575,7 @@ def run_game(level):
             x,y = mouse.get_pos()
             handle_events(x, y, counter, buttons, cars, crash, carClicked, car_start_sound)
             blit_cars(screen, counter, cars, inactive_cars, target, hour_glass, time_passed,x,y,level)
-            checkCrashes(cars, inactive_cars, hour_glass, crash_sound)  
+            checkCrashes(cars, inactive_cars, hour_glass, crash_sound, True, cars[0].pos)  
             pygame.display.flip()    
             
     elif level == 5: 
@@ -771,7 +790,7 @@ def exit_game():
     pygame.mixer.music.stop()
     sys.exit()
     
-def checkCrashes(cars, inactive_cars, hour_glass, crash_sound):
+def checkCrashes(cars, inactive_cars, hour_glass, crash_sound, elastic = False, secondary = (0,0)):
     crash = False
     crashPlayed = False
     if(len(cars) > 1): 
@@ -780,18 +799,26 @@ def checkCrashes(cars, inactive_cars, hour_glass, crash_sound):
                 if(cars[0].pos.y - cars[0].image_h/4 < cars[1].pos.y + cars[1].image_h/4 
                        and cars[0].pos.y + cars[0].image_w/4 > cars[1].pos.y - cars[1].image_w/4 ):
                     crash = True
-        if(crash and not hour_glass.pause):
-            wreck = cars[0].crash(cars[1])   
-            inactive_cars.append(cars[0])
-            inactive_cars.append(cars[1])
-            inactive_cars.append(wreck)
-            
+        if(crash and not hour_glass.pause): 
+            car0 = cars[0].clone()
+            car0.direction = vec2d(0,1) #turn down for win-caption
+            car0.update(0) #update for img update
+            car1 = cars[1].clone()
+            car1.direction = vec2d(0,1)#turn down for win-caption
+            car1.update(0)#update for img update
+            inactive_cars.append(car0)
+            inactive_cars.append(car1)            
+            if(not elastic):
+                wreck = cars[0].crash(cars[1])
+                inactive_cars.append(wreck)
+                cars.pop()
+                cars.pop()
+                cars.append(wreck)
+            else: #elastic "bump"
+                cars[0].bump(cars[1], secondary)            
             if(not crashPlayed):
                 crashPlayed = True
                 crash_sound.play()
-            cars.pop()
-            cars.pop()
-            cars.append(wreck)    
     
     
 def handle_events(x, y, counter, buttons, cars, crash, carClicked, car_start_sound):
