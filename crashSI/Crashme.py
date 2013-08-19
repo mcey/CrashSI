@@ -125,28 +125,33 @@ class Car(Sprite):
                     wreck_direction, wreck_mass, wreck_speed, 0.000006)
         return wreck
     
-    def bump(self, other, spot, fric = 0.000006):
+    def bump(self, other, target1, target2, fric = 0.000006):
         total_mom = (self.direction * self.speed * self.mass) + (other.direction * other.speed * other.mass)
-        distance = vec2d(spot) - self.pos
-        self.friction = fric
-        time = 800 #ms
-        self.direction = distance.normalized()
-        new_speed = (distance / time).get_length() + (0.5 * self.friction * time) 
-        while(new_speed > self.speed):
-            time += 100
-            new_speed = (distance / time).get_length() + (0.5 * self.friction * time)
-        self.speed = new_speed    
-        if(distance.get_length() == 0):
+        distance1 = vec2d(target2) - self.pos
+        distance2 = vec2d(target1) - other.pos
+        
+        mom_x = total_mom.x
+        mom_y = total_mom.y
+        
+        self_ratio = self.mass / (self.mass + other.mass)
+        other_ratio = other.mass / (self.mass + other.mass) 
+        
+        self_vector = vec2d(mom_x * self_ratio / self.mass, mom_y * self_ratio / self.mass)
+        self.direction = self_vector.normalized()
+        self.speed = self_vector.get_length()
+        
+        other_vector = vec2d(mom_x * other_ratio / other.mass, mom_y * other_ratio / other.mass)
+        other.direction = other_vector.normalized()
+        other.speed = other_vector.get_length()
+        
+        if(other.mass < 100):
+            other_vector = vec2d(mom_x, mom_y) / other.mass
+            other.direction = other_vector.normalized()
+            other.speed = other_vector.get_length()            
+        if(distance1.get_length() == 0):
             self.speed = 0  
             self.friction = 0
-        else:
-            if(self.mass > 100):
-                self.imgFileName = 'damagedSprite00.png'
-            else:
-                self.imgFileName = 'bikerSpriteCrash00.png'
-        remainder = total_mom - (self.direction * self.speed * self.mass)
-        other.direction = remainder.normalized()
-        other.speed = remainder.get_length() / other.mass 
+        self.friction = fric
         if(other.mass > 100):
             other.friction = fric
         else:
@@ -321,7 +326,7 @@ def intro_screen():
     rank = ''
     if(len(won_levels) < 3): rank = "Rookie"
     elif(len(won_levels) < 6): rank = "Amateur"
-    elif(len(on_levels) < 9): rank = "Aspirant"
+    elif(len(won_levels) < 9): rank = "Aspirant"
     else: rank = "Veteran"
     text = ("Current Rank: "+rank+"\nLevels Completed: " + 
                      str(len(won_levels)))+"/10"
@@ -633,9 +638,10 @@ def run_game(level):
                                                     (0,-1), 80, 0, 0,(0,1))
                 cars.append(car1)
                 show_tutorial= Button(screen, 'Gen' , (0,0))
-                show_spots = Button(screen, 'Gen', (0,show_tutorial.image_h))                    
+                show_spots = Button(screen, 'Gen', (0,show_tutorial.image_h)) 
+                crash = Button(screen, 'Crash', (car0.pos.x + 50,395))                
                 target = Button(screen, 'Target', (550,340))
-                crash = Button(screen, 'Crash', (car0.pos.x + 50,395))
+                target2 = Button(screen, 'Target', (crash.pos.x, crash.pos.y))
                 cop_spot = Button(screen, 'ShowSpot', (crash.pos.x + 20, crash.pos.y - 70))
                 button_gen = Button(screen, 'Gen', (280, 390)) #
                                     
@@ -657,8 +663,8 @@ def run_game(level):
             draw_spots(counter, cop_spot, button_gen, crash, target)
             x,y = mouse.get_pos()
             handle_events(x, y, counter, buttons, cars, crash, carClicked, car_start_sound)
-            blit_cars(screen, counter, cars, inactive_cars, target, hour_glass, time_passed,x,y,level)
-            checkCrashes(cars, inactive_cars, hour_glass, crash_sound, True, cars[0].pos)  
+            blit_cars(screen, counter, cars, inactive_cars, target, hour_glass, time_passed,x,y,level,target2)
+            checkCrashes(cars, inactive_cars, hour_glass, crash_sound, True,(target2.pos.x, target2.pos.y),(target.pos.x,target.pos.y))
             pygame.display.flip()    
             
     elif level == 5: 
@@ -713,15 +719,15 @@ def run_game(level):
                     inactive_cars = []              
                     background = pygame.image.load("bg_level"+str(level)+".png")
                     car0 = Car(screen,'rustySprite00.png',counter.carpos[0],
-                                    (0,-1), 1300, 0, 0,(0,1))
+                                    (0,-1), 2100, 0, 0,(0,1))
                     cars.append(car0)                      
                     car1 = Car(screen,'redSprite00.png',counter.carpos[1],
-                                                        (1,-1), 1400, 0, 0,(-1,1))
+                                                        (1,-1), 1050, 0, 0,(-1,1))
                     cars.append(car1)
                     show_tutorial= Button(screen, 'Gen' , (0,0))
                     show_spots = Button(screen, 'Gen', (0,show_tutorial.image_h))  
-                    target2 = Button(screen, 'Target', (375,100))
-                    target = Button(screen, 'Target', (300,150))
+                    target2 = Button(screen, 'Target', (335,180))
+                    target = Button(screen, 'Target', (350,60))
                     crash = Button(screen, 'Crash', (300,250))
                     cop_spot = Button(screen, 'ShowSpot', (crash.pos.x + 20, crash.pos.y - 70))
                     button_gen = Button(screen, 'Gen', (280, 420)) 
@@ -746,7 +752,7 @@ def run_game(level):
                 x,y = mouse.get_pos()
                 handle_events(x, y, counter, buttons, cars, crash, carClicked, car_start_sound)
                 blit_cars(screen, counter, cars, inactive_cars, target, hour_glass, time_passed,x,y,level, target2)
-                checkCrashes(cars, inactive_cars, hour_glass, crash_sound, True, (target2.pos.x,target2.pos.y))  
+                checkCrashes(cars, inactive_cars, hour_glass, crash_sound, True,(target2.pos.x, target2.pos.y),(target.pos.x,target.pos.y))  
                 pygame.display.flip()
                 
     elif level == 7:  
@@ -760,15 +766,15 @@ def run_game(level):
                         inactive_cars = []              
                         background = pygame.image.load("bg_level"+str(level)+".png")
                         car0 = Car(screen,'redSprite00.png',counter.carpos[0],
-                                        (0,1), 1400, 0, 0,(0,-1))
+                                        (0,1), 1750, 0, 0,(0,-1))
                         cars.append(car0)                      
                         car1 = Car(screen,'blueSprite00.png',counter.carpos[1],
                                                             (-1,0), 3000, 0, 0,(1,0))
                         cars.append(car1)
                         show_tutorial= Button(screen, 'Gen' , (0,0))
                         show_spots = Button(screen, 'Gen', (0,show_tutorial.image_h))  
-                        target = Button(screen, 'Target', (440,360))                    
-                        target2 = Button(screen, 'Target', (500,460))
+                        target = Button(screen, 'Target', (400,400))                    
+                        target2 = Button(screen, 'Target', (500,400))
                         crash = Button(screen, 'Crash', (580,350))
                         cop_spot = Button(screen, 'ShowSpot', (crash.pos.x + 20, crash.pos.y - 70))
                         button_gen = Button(screen, 'Gen', (280, 390)) #
@@ -793,7 +799,7 @@ def run_game(level):
                     x,y = mouse.get_pos()
                     handle_events(x, y, counter, buttons, cars, crash, carClicked, car_start_sound)
                     blit_cars(screen, counter, cars, inactive_cars, target, hour_glass, time_passed,x,y,level,target2)
-                    checkCrashes(cars, inactive_cars, hour_glass, crash_sound, True, (target2.pos.x,target2.pos.y))  
+                    checkCrashes(cars, inactive_cars, hour_glass, crash_sound, True,(target.pos.x, target.pos.y), (target2.pos.x,target2.pos.y))  
                     pygame.display.flip()
                     
     elif level == 8:  
@@ -807,15 +813,15 @@ def run_game(level):
                 inactive_cars = []              
                 background = pygame.image.load("bg_level"+str(level)+".png")
                 car0 = Car(screen,'greenSprite00.png',counter.carpos[0],
-                                (-1,0), 1900, 0, 0,(1,0))
+                                (-1,0), 1200, 0, 0,(1,0))
                 cars.append(car0)                      
                 car1 = Car(screen,'blueSprite00.png',counter.carpos[1],
-                                                    (1,0), 1250, 0, 0,(-1,0))
+                                                    (1,0), 2750, 0, 0,(-1,0))
                 cars.append(car1)
                 show_tutorial= Button(screen, 'Gen' , (0,0))
                 show_spots = Button(screen, 'Gen', (0,show_tutorial.image_h))  
-                target = Button(screen, 'Target', (500,320))                    
-                target2 = Button(screen, 'Target', (250,180))
+                target = Button(screen, 'Target', (500,240))                    
+                target2 = Button(screen, 'Target', (625,260))
                 crash = Button(screen, 'Crash', (375,250))
                 cop_spot = Button(screen, 'ShowSpot', (crash.pos.x + 20, crash.pos.y - 70))
                 button_gen = Button(screen, 'Gen', (280, 390)) #
@@ -840,7 +846,7 @@ def run_game(level):
             x,y = mouse.get_pos()
             handle_events(x, y, counter, buttons, cars, crash, carClicked, car_start_sound)
             blit_cars(screen, counter, cars, inactive_cars, target, hour_glass, time_passed,x,y,level,target2)
-            checkCrashes(cars, inactive_cars, hour_glass, crash_sound, True, (target2.pos.x,target2.pos.y))  
+            checkCrashes(cars, inactive_cars, hour_glass, crash_sound, True, (target.pos.x, target.pos.y),(target2.pos.x,target2.pos.y))  
             pygame.display.flip()
             
     elif level == 9:  
@@ -854,15 +860,15 @@ def run_game(level):
                 inactive_cars = []              
                 background = pygame.image.load("bg_level"+str(level)+".png")
                 car0 = Car(screen,'redSprite00.png',counter.carpos[0],
-                                (1,1), 1900, 0, 0,(-1,-1))
+                                (1,1), 1400, 0, 0,(-1,-1))
                 cars.append(car0)                      
                 car1 = Car(screen,'blueSprite00.png',counter.carpos[1],
-                                                    (-1,-1), 1250, 0, 0,(1,1))
+                                                    (-1,-1), 2250, 0, 0,(1,1))
                 cars.append(car1)
                 show_tutorial= Button(screen, 'Gen' , (0,0))
                 show_spots = Button(screen, 'Gen', (0,show_tutorial.image_h))  
-                target2 = Button(screen, 'Target', (550,260))                    
-                target = Button(screen, 'Target', (250,280))
+                target2 = Button(screen, 'Target', (300,160))                    
+                target = Button(screen, 'Target', (360,210))
                 crash = Button(screen, 'Crash', (400,250))
                 cop_spot = Button(screen, 'ShowSpot', (crash.pos.x + 20, crash.pos.y - 70))
                 button_gen = Button(screen, 'Gen', (280, 390)) #
@@ -887,7 +893,7 @@ def run_game(level):
             x,y = mouse.get_pos()
             handle_events(x, y, counter, buttons, cars, crash, carClicked, car_start_sound)
             blit_cars(screen, counter, cars, inactive_cars, target, hour_glass, time_passed,x,y,level,target2)
-            checkCrashes(cars, inactive_cars, hour_glass, crash_sound, True, (target2.pos.x,target2.pos.y))  
+            checkCrashes(cars, inactive_cars, hour_glass, crash_sound, True,(target.pos.x, target.pos.y), (target2.pos.x,target2.pos.y))  
             pygame.display.flip()
             
     elif level == 10:  
@@ -901,15 +907,15 @@ def run_game(level):
                         inactive_cars = []              
                         background = pygame.image.load("bg_level"+str(level)+".png")
                         car0 = Car(screen,'rustySprite00.png',counter.carpos[0],
-                                        (1,1), 1800, 0, 0,(-1,-1))
+                                        (1,1), 1100, 0, 0,(-1,-1))
                         cars.append(car0)                      
                         car1 = Car(screen,'blueSprite00.png',counter.carpos[1],
                                                             (-1,1), 2000, 0, 0,(1,-1))
                         cars.append(car1)
                         show_tutorial= Button(screen, 'Gen' , (0,0))
                         show_spots = Button(screen, 'Gen', (0,show_tutorial.image_h))  
-                        target = Button(screen, 'Target', (475,440))                    
-                        target2 = Button(screen, 'Target', (325,440))
+                        target = Button(screen, 'Target', (360,300))                    
+                        target2 = Button(screen, 'Target', (340,550))
                         crash = Button(screen, 'Crash', (350,250))
                         cop_spot = Button(screen, 'ShowSpot', (crash.pos.x + 20, crash.pos.y - 70))
                         button_gen = Button(screen, 'Gen', (280, 390)) #
@@ -934,7 +940,7 @@ def run_game(level):
                     x,y = mouse.get_pos()
                     handle_events(x, y, counter, buttons, cars, crash, carClicked, car_start_sound)
                     blit_cars(screen, counter, cars, inactive_cars, target, hour_glass, time_passed,x,y,level,target2)
-                    checkCrashes(cars, inactive_cars, hour_glass, crash_sound, True, (target2.pos.x,target2.pos.y))  
+                    checkCrashes(cars, inactive_cars, hour_glass, crash_sound, True, (target.pos.x, target.pos.y),(target2.pos.x,target2.pos.y))  
                     pygame.display.flip()            
                   
 def blit_cars(screen, counter, cars, inactive_cars, target, hour_glass, time_passed, x,y, level, target2 = 0):
@@ -961,8 +967,9 @@ def blit_cars(screen, counter, cars, inactive_cars, target, hour_glass, time_pas
                 if((len(cars) == 2 and cars[0].friction > 0 and cars[1].friction > 0)):
                     if(cars[0].speed == 0 and cars[1].speed == 0):
                         lose_report(screen)
+                        if(not hour_glass.pause):
+                            print(cars[0].pos, cars[1].pos)                            
                         hour_glass.stop()
-                        print(cars[0].pos, cars[1].pos)
                         break                   
  
                 if(within_boundaries((x,y), car, True)):
@@ -1045,9 +1052,9 @@ def win_report(screen, level, inactive_cars):
     reports.append("\"That was reckless.\"")
     reports.append("\"Kids.\"")
     reports.append("\"It's a blind spot alright.\"")
-    reports.append("\"Turns out it's sunglare from building south.\"")
-    reports.append("\"At least they found eachother, unhurt.\"")
-    reports.append("\"We found a license-plate, marks them here.\"")
+    reports.append("\"Turns out it's sunglare.\"")
+    reports.append("\"Hah! Only one of them was speeding.\"")
+    reports.append("\"They've confessed and are arrested.\"")
     win_button = Button(screen, 'InfoScreen', (300,250))
     win_button.blitme()    
     if(reports[level - 1] != ""):
@@ -1176,7 +1183,7 @@ def exit_game():
     pygame.mixer.music.stop()
     sys.exit()
     
-def checkCrashes(cars, inactive_cars, hour_glass, crash_sound, elastic = False, secondary = (0,0)):
+def checkCrashes(cars, inactive_cars, hour_glass, crash_sound, elastic = False, target = (0,0), secondary = (0,0)):
     crash = False
     crashPlayed = False
     if(len(cars) > 1): 
@@ -1203,9 +1210,9 @@ def checkCrashes(cars, inactive_cars, hour_glass, crash_sound, elastic = False, 
             else: #elastic "bump"
                 if(not cars[0].bumped):
                     if(cars[0].speed > 0.02 and cars[1].speed > 0.02):
-                        cars[0].bump(cars[1], secondary)
+                        cars[0].bump(cars[1], (target[0] + 30, target[1] + 30), (secondary[0] + 30, secondary[1] + 30))
                     elif(cars[1]. mass < 100):
-                        cars[0].bump(cars[1], secondary)
+                        cars[0].bump(cars[1], (target[0] + 30, target[1] + 30), (secondary[0] + 30, secondary[1] + 30))
                     else:
                         crashPlayed = True
                 else:
